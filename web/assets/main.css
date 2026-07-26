@@ -95,6 +95,9 @@ h2{font-size:21px;margin:0 0 18px;letter-spacing:-.02em;color:var(--ink)}
 .panel:hover{box-shadow:var(--shadow-lg)}
 .panel h3{margin:0 0 14px;padding-bottom:12px;border-bottom:1px solid var(--border);font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em;display:flex;align-items:center;gap:9px}
 .mt-panel{margin-top:16px}
+/* panel header with a trailing action (e.g. Export) pushed to the right */
+.panel h3.h3-row>*:last-child{margin-inline-start:auto}
+.panel h3.h3-row .btn{text-transform:none;letter-spacing:normal;font-size:12px}
 
 /* ---------- Tables ---------- */
 table{width:100%;border-collapse:collapse;font-size:13px}
@@ -134,8 +137,16 @@ tr:last-child td{border-bottom:none}
 .skeleton{height:280px;border-radius:12px;background:linear-gradient(90deg,#f0f0f1 25%,#f7f7f8 37%,#f0f0f1 63%);
   background-size:400% 100%;animation:shimmer 1.4s ease infinite}
 /* chart wrapper — fixed height on desktop, aspect-ratio on phones so charts aren't tall & narrow */
-.chart-box{height:280px}
-@media (max-width:480px){.chart-box{height:auto;aspect-ratio:4/3}}
+/* resize:both + Chart.js responsiveness = live drag-to-resize; max-width keeps it in its cell */
+.chart-box{height:280px;position:relative;resize:both;overflow:hidden;max-width:100%;min-height:180px}
+.chart-box::-webkit-resizer{background:var(--surface)}
+@media (max-width:480px){.chart-box{height:auto;aspect-ratio:4/3;resize:none}}
+.chart-dl{position:absolute;top:6px;right:6px;z-index:2;display:flex;gap:4px;opacity:0;transition:opacity .15s ease}
+.chart-box:hover .chart-dl,.chart-dl:focus-within{opacity:1}
+.chart-dl button{border:1px solid var(--border);background:rgba(255,255,255,.92);border-radius:8px;
+  padding:2px 7px;height:24px;font-size:10px;font-weight:600;letter-spacing:.02em;cursor:pointer;color:var(--muted)}
+.chart-dl button:hover{color:var(--ink);background:#fff}
+@media (prefers-reduced-motion:reduce){.chart-dl{transition:none}}
 @keyframes shimmer{0%{background-position:100% 0}100%{background-position:-100% 0}}
 
 /* ---------- Motion: entrance + stagger ---------- */

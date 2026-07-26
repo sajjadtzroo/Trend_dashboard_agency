@@ -21,6 +21,7 @@ const { q, view, sortBy, arrow, count } = useGrid(rows, {
       <div class="grid-toolbar">
         <input v-model="q" class="search" type="search" placeholder="Search invoice, client, brand…" aria-label="Search invoices" />
         <span class="count">{{ count }} of {{ rows?.length || 0 }} invoices</span>
+        <GridExport :rows="view" name="invoices" title="Invoices" />
       </div>
       <Loadable :pending="pending" :empty="!rows?.length" empty-text="No invoices yet.">
         <table class="grid pin">

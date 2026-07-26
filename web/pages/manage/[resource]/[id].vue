@@ -82,6 +82,7 @@ const { q, view, sortBy, arrow, count } = useGrid(txns, {
       <div class="grid-toolbar">
         <input v-model="q" class="search" type="search" placeholder="Search date, client, brand, service…" aria-label="Search transactions" />
         <span class="count">{{ count }} of {{ txns.length }} rows</span>
+        <GridExport :rows="view" :name="`${resource}-${id}-transactions`" title="Transactions" />
       </div>
       <table class="grid pin">
         <thead><tr>

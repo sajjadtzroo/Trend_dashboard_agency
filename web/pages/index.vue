@@ -84,8 +84,8 @@ const campaignsBar = computed(() => {
 
     <div class="grid2">
       <div class="panel">
-        <h3>Top Clients</h3>
-        <ChartDoughnut v-if="topClients?.length" :data="clientShare" aria-label="Revenue share by client" />
+        <h3 class="h3-row">Top Clients <GridExport :rows="clients.view.value" name="top-clients" title="Top Clients" /></h3>
+        <ChartDoughnut v-if="topClients?.length" :data="clientShare" name="top-clients" aria-label="Revenue share by client" />
         <table class="mt-panel grid">
           <thead><tr>
             <th class="s" @click="clients.sortBy('client')">Client{{ clients.arrow('client') }}</th>
@@ -101,8 +101,8 @@ const campaignsBar = computed(() => {
         </table>
       </div>
       <div class="panel">
-        <h3>Top Campaigns</h3>
-        <ChartBar v-if="topCampaigns?.length" :data="campaignsBar" horizontal aria-label="Top campaigns by revenue" />
+        <h3 class="h3-row">Top Campaigns <GridExport :rows="camps.view.value" name="top-campaigns" title="Top Campaigns" /></h3>
+        <ChartBar v-if="topCampaigns?.length" :data="campaignsBar" horizontal name="top-campaigns" aria-label="Top campaigns by revenue" />
         <table class="mt-panel grid">
           <thead><tr>
             <th class="s" @click="camps.sortBy('campaign')">Campaign{{ camps.arrow('campaign') }}</th>

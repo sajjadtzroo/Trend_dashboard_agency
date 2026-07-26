@@ -1,0 +1,36 @@
+---
+config:
+  flowchart:
+    curve: linear
+---
+graph TD;
+	__start__([<p>__start__</p>]):::first
+	normalize(normalize)
+	classify(classify)
+	plan_sql(plan_sql)
+	exec_sql(exec_sql)
+	generate_sql(generate_sql)
+	retrieve(retrieve)
+	generate_doc(generate_doc)
+	guard_ground(guard_ground)
+	refuse(refuse)
+	__end__([<p>__end__</p>]):::last
+	__start__ --> normalize;
+	classify -. &nbsp;data&nbsp; .-> plan_sql;
+	classify -.-> refuse;
+	classify -. &nbsp;doc&nbsp; .-> retrieve;
+	exec_sql -. &nbsp;generate&nbsp; .-> generate_sql;
+	exec_sql -.-> plan_sql;
+	generate_doc --> guard_ground;
+	guard_ground -. &nbsp;ok&nbsp; .-> __end__;
+	guard_ground -.-> refuse;
+	normalize --> classify;
+	plan_sql -.-> exec_sql;
+	plan_sql -. &nbsp;generate&nbsp; .-> generate_sql;
+	retrieve --> generate_doc;
+	generate_sql --> __end__;
+	refuse --> __end__;
+	classDef default fill:#f2f0ff,line-height:1.2
+	classDef first fill-opacity:0
+	classDef last fill:#bfb6fc
+

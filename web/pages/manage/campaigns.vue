@@ -21,6 +21,22 @@ const share = computed(() => {
   if (other > 0) { labels.push("Other"); data.push(other); }
   return { labels, datasets: [{ data, backgroundColor: series, borderWidth: 0 }] };
 });
+// Top campaigns by profit — earners, not just top-line.
+const profitBar = computed(() => {
+  const list = [...(rows.value || [])].sort((a, b) => b.profit - a.profit).slice(0, N);
+  return { labels: list.map((r) => r.name),
+    datasets: [{ label: "Profit", data: list.map((r) => r.profit), backgroundColor: palette.green }] };
+});
+// Revenue rolled up by client — which account the campaign spend concentrates in.
+const byClient = computed(() => {
+  const m: Record<string, number> = {};
+  for (const r of rows.value || []) { const c = r.client || "—"; m[c] = (m[c] || 0) + Number(r.revenue || 0); }
+  const entries = Object.entries(m).sort((a, b) => b[1] - a[1]);
+  const head = entries.slice(0, 8), other = entries.slice(8).reduce((s, [, v]) => s + v, 0);
+  const labels = head.map(([k]) => k), data = head.map(([, v]) => v);
+  if (other > 0) { labels.push("Other"); data.push(other); }
+  return { labels, datasets: [{ data, backgroundColor: series, borderWidth: 0 }] };
+});
 </script>
 
 <template>
@@ -43,7 +59,21 @@ const share = computed(() => {
       <div class="panel">
         <h3>Revenue Share</h3>
         <Loadable :pending="pending" :empty="!rows?.length" empty-text="No campaigns yet.">
-          <ChartDoughnut :data="share" aria-label="Revenue share by campaign" />
+          <ChartDoughnut :data="share" name="campaigns-revenue-share" aria-label="Revenue share by campaign" />
+        </Loadable>
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="panel">
+        <h3>Top {{ N }} Campaigns by Profit</h3>
+        <Loadable :pending="pending" :empty="!rows?.length" empty-text="No campaigns yet.">
+          <ChartBar :data="profitBar" horizontal name="campaigns-profit" aria-label="Operating profit by campaign" />
+        </Loadable>
+      </div>
+      <div class="panel">
+        <h3>Revenue by Client</h3>
+        <Loadable :pending="pending" :empty="!rows?.length" empty-text="No campaigns yet.">
+          <ChartDoughnut :data="byClient" name="campaigns-by-client" aria-label="Revenue share by client" />
         </Loadable>
       </div>
     </div>
@@ -51,6 +81,7 @@ const share = computed(() => {
       <div class="grid-toolbar">
         <input v-model="q" class="search" type="search" placeholder="Search campaign, client…" aria-label="Search campaigns" />
         <span class="count">{{ count }} of {{ rows?.length || 0 }} campaigns</span>
+        <GridExport :rows="view" name="campaigns" title="Campaigns" />
       </div>
       <table class="grid pin">
         <thead><tr>

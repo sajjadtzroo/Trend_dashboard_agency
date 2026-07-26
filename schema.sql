@@ -213,3 +213,65 @@ INSERT INTO dim_order_status (label, funnel_rank)
     ON CONFLICT (label) DO NOTHING;
 
 COMMIT;
+
+-- =====================================================================
+-- RAG CHATBOT — Phase 0: pgvector + lexical extensions, read-only SQL role
+-- (Runs after COMMIT; init_schema() executes the file in AUTOCOMMIT.)
+-- Requires the pgvector/pgvector image — plain postgres:16 lacks `vector`.
+-- =====================================================================
+CREATE EXTENSION IF NOT EXISTS vector;
+CREATE EXTENSION IF NOT EXISTS pg_trgm;   -- Persian-friendly fuzzy lexical (no FA FTS dict)
+
+-- Read-only role for the free-form SQL branch. NOLOGIN by design: exec_sql does
+-- `SET LOCAL ROLE bot_ro` inside its transaction on the existing connection, so
+-- there's no second credential to manage and the timeout/row-cap wrapper still applies.
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'bot_ro') THEN
+        CREATE ROLE bot_ro NOLOGIN;
+    END IF;
+END $$;
+GRANT USAGE ON SCHEMA public TO bot_ro;
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO bot_ro;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO bot_ro;  -- future chunk/document tables
+
+-- =====================================================================
+-- RAG CHATBOT — Phase 2: document corpus for dense retrieval
+-- Store content_raw (original, for citations) AND content_norm (embedding/lexical).
+-- embedding dims = EMBED_DIMS (default 1024, Qwen3 MRL); the P0 probe may switch this
+-- to 3072 (Gemini native) -> ALTER COLUMN + reindex (the documented migration path).
+-- =====================================================================
+CREATE TABLE IF NOT EXISTS document (
+    document_id    BIGSERIAL PRIMARY KEY,
+    source_uri     TEXT NOT NULL,
+    title_raw      TEXT,
+    doc_type       TEXT,
+    lang           TEXT,
+    doc_tags       TEXT[] DEFAULT '{}',
+    jalali_yyyymm  INTEGER,
+    gregorian_date DATE,
+    content_hash   TEXT NOT NULL,
+    created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
+    UNIQUE (source_uri, content_hash)
+);
+
+CREATE TABLE IF NOT EXISTS chunk (
+    chunk_id        BIGSERIAL PRIMARY KEY,
+    document_id     BIGINT NOT NULL REFERENCES document(document_id) ON DELETE CASCADE,
+    ord             INTEGER NOT NULL,
+    content_raw     TEXT NOT NULL,
+    content_norm    TEXT NOT NULL,
+    token_count     INTEGER,
+    embedding_model TEXT NOT NULL,
+    embedding       halfvec(1024),
+    UNIQUE (document_id, ord, embedding_model)
+);
+
+CREATE INDEX IF NOT EXISTS ix_chunk_embedding
+    ON chunk USING hnsw (embedding halfvec_cosine_ops) WITH (m = 16, ef_construction = 64);
+CREATE INDEX IF NOT EXISTS ix_chunk_norm_trgm
+    ON chunk USING gin (content_norm gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS ix_doc_yyyymm ON document(jalali_yyyymm);
+CREATE INDEX IF NOT EXISTS ix_doc_tags   ON document USING gin (doc_tags);
+
+GRANT SELECT ON document, chunk TO bot_ro;  -- explicit for existing DBs (default-priv only covers future tables)

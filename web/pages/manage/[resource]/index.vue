@@ -42,6 +42,7 @@ async function remove(row: any) {
       <div class="grid-toolbar">
         <input v-model="q" class="search" type="search" placeholder="Search name…" aria-label="Search" />
         <span class="count">{{ count }} of {{ rows?.length || 0 }}</span>
+        <GridExport :rows="view" :name="resource" :title="titles[resource] || resource" />
       </div>
       <table class="grid pin">
         <thead><tr>

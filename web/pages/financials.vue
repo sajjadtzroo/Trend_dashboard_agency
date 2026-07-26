@@ -114,8 +114,10 @@ const stmtChart = computed(() => {
       <div class="tabs">
         <button v-for="b in ['campaign','brand','client','service']" :key="b"
                 :class="{ active: segBy === b }" @click="segBy = b as any">{{ b[0].toUpperCase() + b.slice(1) }}</button>
+        <GridExport :rows="segRows" :name="`segments-${segBy}`" title="Operating Segments"
+                    style="margin-inline-start:auto" />
       </div>
-      <ChartBar v-if="segRows.length" :data="segChart" class="mt-panel" aria-label="Revenue, cost and operating profit by segment" />
+      <ChartBar v-if="segRows.length" :data="segChart" class="mt-panel" :name="`segments-${segBy}`" aria-label="Revenue, cost and operating profit by segment" />
       <table class="stmt" style="margin-top: 12px">
         <thead><tr>
           <th @click="sortBy('segment')" style="cursor:pointer">Segment</th>

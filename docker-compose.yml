@@ -1,6 +1,6 @@
 services:
   db:
-    image: postgres:16
+    image: pgvector/pgvector:0.8.5-pg16   # 0.8.5 latest; ≥0.8.2 floor for CVE-2026-3172
     environment:
       POSTGRES_USER: finance
       POSTGRES_PASSWORD: finance
@@ -35,6 +35,10 @@ services:
       LOG_LEVEL: INFO
       SEED_ON_START: "1"
       CORS_ORIGINS: "http://localhost:3000"
+      LLM_MODEL: "google/gemini-3.6-flash"
+      OPENROUTER_API_KEY: "${OPENROUTER_API_KEY:-}"   # supply via shell/.env; empty is fine until you use /chat
+    volumes:
+      - ./docs_sample:/app/docs_sample:ro             # corpus for `python -m app.chat.ingest`
     depends_on:
       db:
         condition: service_healthy

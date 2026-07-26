@@ -8,3 +8,8 @@ jdatetime==5.0.0
 redis==5.2.1
 loguru==0.7.3
 python-multipart==0.0.20
+# --- RAG chatbot (Phase 0) ---
+langgraph==1.2.9
+# ponytail: pin exact after first `pip freeze` — these must resolve against langgraph 1.2.9
+langgraph-checkpoint-postgres>=2.0
+langchain-openai>=0.2

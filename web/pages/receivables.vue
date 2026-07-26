@@ -71,6 +71,7 @@ const share = computed(() => {
       <div class="grid-toolbar">
         <input v-model="q" class="search" type="search" placeholder="Search client…" aria-label="Search clients" />
         <span class="count">{{ count }} of {{ rows?.length || 0 }} clients</span>
+        <GridExport :rows="view" name="receivables" title="Receivables" />
       </div>
       <table class="grid pin">
         <thead><tr>

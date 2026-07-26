@@ -67,6 +67,7 @@ const compareData = computed(() => ({
       <div class="grid-toolbar">
         <input v-model="q" class="search" type="search" placeholder="Search brand, client…" aria-label="Search brands" />
         <span class="count">{{ count }} of {{ brands?.length || 0 }} brands</span>
+        <GridExport :rows="view" name="brands" title="Brands" />
       </div>
       <table>
         <thead><tr>

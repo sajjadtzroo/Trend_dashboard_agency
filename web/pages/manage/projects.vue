@@ -49,6 +49,7 @@ const profitChart = computed(() => {
       <div class="grid-toolbar">
         <input v-model="q" class="search" type="search" placeholder="Search code, title, client…" aria-label="Search projects" />
         <span class="count">{{ count }} of {{ rows?.length || 0 }} projects</span>
+        <GridExport :rows="view" name="projects" title="Projects" />
       </div>
       <table class="grid pin">
         <thead><tr>

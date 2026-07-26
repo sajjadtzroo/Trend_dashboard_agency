@@ -20,6 +20,18 @@ const share = computed(() => {
   return { labels: list.map((r) => r.name),
     datasets: [{ data: list.map((r) => r.revenue), backgroundColor: series, borderWidth: 0 }] };
 });
+// Margin % per account — efficiency, not just volume.
+const marginBar = computed(() => {
+  const list = [...(rows.value || [])].filter((r) => r.margin != null).sort((a, b) => b.margin - a.margin);
+  return { labels: list.map((r) => r.name),
+    datasets: [{ label: "Margin %", data: list.map((r) => r.margin), backgroundColor: palette.accent }] };
+});
+// Activity — transaction rows handled per account (workload).
+const activityBar = computed(() => {
+  const list = [...(rows.value || [])].sort((a, b) => b.rows - a.rows);
+  return { labels: list.map((r) => r.name),
+    datasets: [{ label: "Transactions", data: list.map((r) => r.rows), backgroundColor: palette.grey }] };
+});
 </script>
 
 <template>
@@ -41,7 +53,21 @@ const share = computed(() => {
       <div class="panel">
         <h3>Revenue Share</h3>
         <Loadable :pending="pending" :empty="!rows?.length" empty-text="No users yet.">
-          <ChartDoughnut :data="share" aria-label="Revenue share by account" />
+          <ChartDoughnut :data="share" name="users-revenue-share" aria-label="Revenue share by account" />
+        </Loadable>
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="panel">
+        <h3>Margin by Account</h3>
+        <Loadable :pending="pending" :empty="!rows?.length" empty-text="No users yet.">
+          <ChartBar :data="marginBar" horizontal name="users-margin" aria-label="Profit margin percent by account" />
+        </Loadable>
+      </div>
+      <div class="panel">
+        <h3>Activity by Account</h3>
+        <Loadable :pending="pending" :empty="!rows?.length" empty-text="No users yet.">
+          <ChartBar :data="activityBar" horizontal name="users-activity" aria-label="Transaction count by account" />
         </Loadable>
       </div>
     </div>
@@ -49,6 +75,7 @@ const share = computed(() => {
       <div class="grid-toolbar">
         <input v-model="q" class="search" type="search" placeholder="Search account, role…" aria-label="Search users" />
         <span class="count">{{ count }} of {{ rows?.length || 0 }} users</span>
+        <GridExport :rows="view" name="users" title="Users / Managers" />
       </div>
       <table class="grid pin">
         <thead><tr>
