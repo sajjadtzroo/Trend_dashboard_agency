@@ -106,13 +106,20 @@ def balance(db: Session = Depends(get_db), f: Filters = Depends(get_filters)):
 def cashflow(db: Session = Depends(get_db), f: Filters = Depends(get_filters)):
     def q():
         c = _scalars(db, f)
-        net_cash = c["net_profit"] - c["receivables"] + c["payables"]
+        # CFA free-cash-flow build: Operating Profit − ΔNWC − CapEx.
+        # ΔNWC uses the balance-sheet working-capital items (WC assets rise → cash out,
+        # WC liabilities rise → cash in), so this articulates with /balance.
+        nwc_change = c["receivables"] + c["insurance_retention"] - c["payables"]
+        capex = 0.0   # ponytail: no fixed-asset/CapEx ledger for an agency; add a column if that changes
+        fcf = c["operating_profit"] - nwc_change - capex
         return {"title": "Statement of Cash Flows", "standard": "IAS 7 (indirect)", "currency": "IRR",
                 "lines": [
-                    _line("Net Profit", c["net_profit"], None),
+                    _line("Operating Profit", c["operating_profit"], None),
                     _line("− Δ Trade Receivables", -c["receivables"], None, indent=True),
+                    _line("− Δ Insurance Retention", -c["insurance_retention"], None, indent=True),
                     _line("+ Δ Trade Payables", c["payables"], None, indent=True),
-                    _line("Net Cash from Operating Activities", net_cash, None),
+                    _line("− Capital Expenditure", -capex, None, indent=True),
+                    _line("Free Cash Flow", fcf, None),
                 ]}
     return cached("stmt-cashflow", f.as_params(), q)
 
