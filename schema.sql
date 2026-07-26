@@ -182,6 +182,25 @@ CREATE INDEX IF NOT EXISTS ix_ft_type_date   ON fact_transaction(transaction_typ
 CREATE INDEX IF NOT EXISTS ix_ft_client_date ON fact_transaction(client_key, date_key);
 
 -- =====================================================================
+-- PAYMENTS — itemized payments recorded in-app against a RECEIVABLE invoice.
+-- The imported fact_transaction.amount_paid/balance stay the live source of
+-- truth (each recorded payment bumps them), so grids/status need no changes.
+-- This table is the itemized history behind that number.
+-- ponytail: a full re-import resets the aggregate to source truth; these rows
+-- survive here. Re-fold them into amount_paid only if that ever matters.
+-- =====================================================================
+CREATE TABLE IF NOT EXISTS payment (
+    payment_id     BIGSERIAL PRIMARY KEY,
+    transaction_id BIGINT NOT NULL REFERENCES fact_transaction(transaction_id) ON DELETE CASCADE,
+    amount         NUMERIC(20,2) NOT NULL CHECK (amount > 0),
+    paid_on        DATE NOT NULL,
+    method         TEXT,                                   -- a dim_payment_method label
+    note           TEXT,
+    created_at     TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS ix_payment_txn ON payment(transaction_id);
+
+-- =====================================================================
 -- SOFT-DELETE FLAGS (management CRUD never hard-deletes referenced dims)
 -- =====================================================================
 ALTER TABLE dim_campaign ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT TRUE;

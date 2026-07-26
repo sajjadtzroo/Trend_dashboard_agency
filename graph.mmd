@@ -11,6 +11,8 @@ graph TD;
 	exec_sql(exec_sql)
 	generate_sql(generate_sql)
 	retrieve(retrieve)
+	grade(grade)
+	rewrite_query(rewrite_query)
 	generate_doc(generate_doc)
 	guard_ground(guard_ground)
 	refuse(refuse)
@@ -22,12 +24,15 @@ graph TD;
 	exec_sql -. &nbsp;generate&nbsp; .-> generate_sql;
 	exec_sql -.-> plan_sql;
 	generate_doc --> guard_ground;
+	grade -. &nbsp;generate&nbsp; .-> generate_doc;
+	grade -. &nbsp;rewrite&nbsp; .-> rewrite_query;
 	guard_ground -. &nbsp;ok&nbsp; .-> __end__;
 	guard_ground -.-> refuse;
 	normalize --> classify;
 	plan_sql -.-> exec_sql;
 	plan_sql -. &nbsp;generate&nbsp; .-> generate_sql;
-	retrieve --> generate_doc;
+	retrieve --> grade;
+	rewrite_query --> retrieve;
 	generate_sql --> __end__;
 	refuse --> __end__;
 	classDef default fill:#f2f0ff,line-height:1.2

@@ -3,15 +3,37 @@
 Complements /receivables (which only aggregates by client): a filter-aware grid of
 every invoice, plus a by-id detail returning every field on the invoice.
 """
-from fastapi import APIRouter, Depends, HTTPException
+from datetime import date
+
+from fastapi import APIRouter, Depends, HTTPException, Body
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from ..db import get_db
-from ..cache import cached
+from ..cache import cached, invalidate_aggregates
 from ..filters import Filters, get_filters, JOINS
 from ..queries import rows
 
 router = APIRouter(prefix="/invoices", tags=["invoices"])
+
+
+def _pay_status(receivable: float, paid: float) -> int:
+    """0 Unpaid / 1 Paid / 2 Partial — matches dim_payment_status seed."""
+    if paid <= 0:
+        return 0
+    if paid >= (receivable or 0):
+        return 1
+    return 2
+
+
+def _receivable(db: Session, invoice_id: int) -> dict:
+    """The fact row for a RECEIVABLE invoice, or 404. Returns receivable/amount_paid/balance."""
+    r = rows(db, """SELECT receivable, amount_paid, balance FROM fact_transaction
+                    WHERE transaction_id = :id AND transaction_type = 'RECEIVABLE'""",
+             {"id": invoice_id})
+    if not r:
+        raise HTTPException(404, "invoice not found")
+    return r[0]
 
 
 @router.get("")
