@@ -11,6 +11,10 @@ web/.output/
 web/.data/
 node_modules/
 
+# Data files — real financials, do not publish
+*.xlsx
+*.csv
+
 # OS / editor
 .DS_Store
 *.log
