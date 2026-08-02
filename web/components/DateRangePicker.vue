@@ -8,7 +8,6 @@ const open = ref(false);
 const pendingStart = ref<number | null>(null); // first click of a new range
 const hover = ref<number | null>(null);
 
-const fa = (n: number | string) => String(n).replace(/[0-9]/g, (d) => "۰۱۲۳۴۵۶۷۸۹"[+d]);
 const ym = (y: number, m: number) => y * 100 + m;
 const fmt = (v: number | null) => (v == null ? "—" : `${Math.floor(v / 100)}/${String(v % 100).padStart(2, "0")}`);
 
@@ -96,12 +95,12 @@ function clear() { filters.date_from = null; filters.date_to = null; pendingStar
         <p class="dr-hint">{{ pendingStart == null ? "Click a start month" : "Click an end month" }}</p>
         <div class="dr-cal" @mouseleave="hover = null">
           <div v-for="y in years" :key="y" class="dr-year">
-            <span class="dr-ylabel">{{ fa(y) }}</span>
+            <span class="dr-ylabel">{{ y }}</span>
             <div class="dr-months">
               <button v-for="m in 12" :key="m" class="dr-cell"
                 :class="{ 'in-range': has(ym(y, m)) && inRange(ym(y, m)), end: isEnd(ym(y, m)) && inRange(ym(y, m)) }"
                 :disabled="!has(ym(y, m))" :title="monthName[ym(y, m)] || ''"
-                @click="pick(y, m)" @mouseenter="hover = ym(y, m)">{{ fa(String(m).padStart(2, '0')) }}</button>
+                @click="pick(y, m)" @mouseenter="hover = ym(y, m)">{{ String(m).padStart(2, '0') }}</button>
             </div>
           </div>
           <p v-if="!years.length" class="table-empty">No dated data.</p>
