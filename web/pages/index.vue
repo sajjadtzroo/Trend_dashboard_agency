@@ -14,7 +14,7 @@ const clients = useGrid(topClients, { sort: "revenue" });
 const camps = useGrid(topCampaigns, { sort: "revenue" });
 
 const funnelData = computed(() => ({
-  labels: (funnel.value || []).map((r) => r.order_status),
+  labels: (funnel.value || []).map((r) => statusLabel(r.order_status)),
   datasets: [{ label: "Count", data: (funnel.value || []).map((r) => r.count), backgroundColor: GREEN }],
 }));
 const svcData = computed(() => ({

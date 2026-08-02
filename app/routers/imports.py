@@ -1,4 +1,5 @@
 """POST /import/xlsx — upload workbook, import to star schema, report + job status."""
+import csv
 import shutil
 import tempfile
 import uuid
@@ -6,6 +7,7 @@ from pathlib import Path
 
 from fastapi import APIRouter, Depends, UploadFile, File, HTTPException
 from loguru import logger
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from ..db import get_db
@@ -13,6 +15,35 @@ from ..importer import Importer
 from ..cache import set_job, get_job, invalidate_aggregates
 
 router = APIRouter(prefix="/import", tags=["import"])
+
+
+@router.post("/gsheet")
+def import_gsheet(db: Session = Depends(get_db)):
+    """Live-sync the configured Google Sheet's Sales-Funnel tab into the star schema.
+    Authoritative refresh: drops the prior sheet-sourced SALE rows, then re-imports."""
+    from ..gsheet import fetch_rows
+    rows = fetch_rows()
+    if len(rows) < 3:
+        raise HTTPException(400, "sheet returned too few rows (unexpected layout)")
+    job_id = uuid.uuid4().hex[:12]
+    tmp = Path(tempfile.gettempdir()) / f"gsheet_{job_id}.csv"
+    with tmp.open("w", encoding="utf-8", newline="") as out:
+        csv.writer(out).writerows(rows)
+    logger.info("gsheet import {} started ({} rows)", job_id, len(rows))
+    try:
+        db.execute(text("DELETE FROM fact_transaction WHERE source_row LIKE 'Sales!R%'"))  # replace, not merge
+        result = Importer(db).run_csv(str(tmp))
+        result.update(status="done", job_id=job_id, source="google-sheet")
+        set_job(job_id, result)
+        invalidate_aggregates()
+        logger.success("gsheet import {} done: {}", job_id, result["inserted"])
+        return result
+    except Exception as e:
+        db.rollback()
+        logger.exception("gsheet import {} failed", job_id)
+        raise HTTPException(500, f"google sheet import failed: {e}")
+    finally:
+        tmp.unlink(missing_ok=True)
 
 
 # sync def: polars read + inserts block for seconds — run in the threadpool,

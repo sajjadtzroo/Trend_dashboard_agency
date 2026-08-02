@@ -255,6 +255,17 @@ a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible,.l
   .dr-pop{position:fixed;inset-inline:12px;top:auto;bottom:12px;width:auto}
 }
 
+/* ---------- Google Sheet sync card (Import page) ---------- */
+.gsync{display:flex;align-items:center;gap:14px}
+.gsync-txt{flex:1;min-width:0}
+.gsync-txt strong{color:var(--ink)}
+.gsync-txt p{margin:2px 0 0}
+.gsync-btn{display:inline-flex;align-items:center;gap:8px;border-color:var(--primary);color:var(--primary);white-space:nowrap}
+.gsync-btn:disabled{opacity:.6;cursor:default}
+.spin{animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (max-width:600px){.gsync{flex-wrap:wrap}.gsync-btn{width:100%;justify-content:center}}
+
 /* table drill-in: brand -> projects, and sortable segment headers */
 table button.link{background:none;border:none;padding:0;color:var(--primary);font:inherit;cursor:pointer}
 table button.link:hover{text-decoration:underline}

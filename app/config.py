@@ -22,6 +22,14 @@ LOGIN_MAX = int(os.getenv("LOGIN_MAX", "5"))               # attempts per window
 LOGIN_WINDOW = int(os.getenv("LOGIN_WINDOW", "900"))       # 15 min
 ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "")           # seeded at startup if set and absent
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "")
+
+# --- Google Sheets live import ---
+GSHEET_ID = os.getenv("GSHEET_ID", "")                     # spreadsheet id
+GSHEET_TAB = os.getenv("GSHEET_TAB", "1405 Sales Funnel")  # tab (worksheet) title
+# Service-account creds — pick one. Prod uses B64 (single-line, CLI-safe); dev a file path.
+GOOGLE_SA_JSON_B64 = os.getenv("GOOGLE_SA_JSON_B64", "")
+GOOGLE_SA_JSON = os.getenv("GOOGLE_SA_JSON", "")
+GOOGLE_SA_FILE = os.getenv("GOOGLE_SA_FILE", "")
 SCHEMA_SQL = os.getenv("SCHEMA_SQL", "schema.sql")
 SEED_CSV = os.getenv("SEED_CSV", "Creative Lab Sales Funnel - 1405 Sales Funnel.csv")
 

@@ -64,3 +64,6 @@ export const pct = (n: number | null | undefined) => (n == null ? "—" : n.toFi
 // Sum a numeric field across a fetched array (for client-side KPI summary rows).
 export const sumBy = (arr: any[] | null | undefined, k: string) =>
   (arr || []).reduce((s, r) => s + Number(r[k] || 0), 0);
+// Tidy source-data typos in order-status labels for display (data itself is untouched).
+export const statusLabel = (s: string | null | undefined) =>
+  s === "Opportuinity" ? "Opportunity" : (s || "—");

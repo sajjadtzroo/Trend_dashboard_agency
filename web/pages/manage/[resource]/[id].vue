@@ -105,7 +105,7 @@ const { q, view, sortBy, arrow, count } = useGrid(txns, {
             <td>{{ t.client || "—" }}</td>
             <td>{{ t.brand || "—" }}</td>
             <td>{{ t.service || "—" }}</td>
-            <td>{{ t.order_status || "—" }}</td>
+            <td>{{ statusLabel(t.order_status) }}</td>
             <td class="n">{{ irr(t.revenue) }}</td>
             <td class="n">{{ irr(t.cost) }}</td>
             <td class="n">{{ irr(t.balance) }}</td>
