@@ -9,12 +9,14 @@ from ..queries import rows
 
 router = APIRouter(tags=["dashboard"])
 
-# Business rule: revenue = invoiced amounts (Invoices sheet -> RECEIVABLE),
-# cost = supplier bills (Suppliers sheet -> PAYABLE). Not the Sales sheet's
-# self-reported columns. ponytail: only endpoints keyed by client/date can use
-# these — RECEIVABLE has no service/campaign, PAYABLE has no brand/campaign.
-REV  = "COALESCE(SUM(f.amount) FILTER (WHERE f.transaction_type='RECEIVABLE'),0)"
-COST = "COALESCE(SUM(f.amount) FILTER (WHERE f.transaction_type='PAYABLE'),0)"
+# Business rule: headline revenue/cost = REALIZED sales only — SALE lines that
+# reached the 'Invoice' funnel stage (matches the source sheet's grand total).
+# Pipeline stages (Opportunity/Confirm/Proposal/…) show in the funnel/breakdown
+# views, which sum f.revenue directly. AR/AP-derived figures stay zero until an
+# invoice/supplier ledger is loaded (not present in the funnel CSV).
+_INVOICE = "(SELECT order_status_key FROM dim_order_status WHERE label='Invoice')"
+REV  = f"COALESCE(SUM(f.revenue) FILTER (WHERE f.transaction_type='SALE' AND f.order_status_key={_INVOICE}),0)"
+COST = f"COALESCE(SUM(f.cost)    FILTER (WHERE f.transaction_type='SALE' AND f.order_status_key={_INVOICE}),0)"
 
 
 @router.get("/meta")
@@ -92,7 +94,8 @@ def revenue_by_service(db: Session = Depends(get_db), f: Filters = Depends(get_f
                COALESCE(SUM(f.revenue),0) AS revenue,
                COALESCE(SUM(f.cost),0) AS cost,
                COALESCE(SUM(f.operational_profit),0) AS profit
-        {JOINS} {where} GROUP BY sv.service_name ORDER BY revenue DESC"""
+        {JOINS} {where} AND f.order_status_key = {_INVOICE}
+        GROUP BY sv.service_name ORDER BY revenue DESC"""
         return rows(db, sql, p)
     return cached("revenue-by-service", f.as_params(), q)
 
@@ -135,7 +138,8 @@ def top_campaigns(limit: int = 10, db: Session = Depends(get_db), f: Filters = D
                COALESCE(SUM(f.operational_profit),0) AS profit,
                CASE WHEN SUM(f.revenue)>0 THEN ROUND(SUM(f.operational_profit)/SUM(f.revenue)*100,1) END AS margin
         {JOINS} LEFT JOIN dim_campaign cm ON cm.campaign_key = f.campaign_key
-        {where} GROUP BY cm.order_name ORDER BY revenue DESC LIMIT :limit"""
+        {where} AND f.order_status_key = {_INVOICE}
+        GROUP BY cm.order_name ORDER BY revenue DESC LIMIT :limit"""
         return rows(db, sql, p)
     return cached("top-campaigns", {**f.as_params(), "limit": limit}, q)
 
@@ -151,7 +155,7 @@ def brands(db: Session = Depends(get_db), f: Filters = Depends(get_filters)):
                COALESCE(SUM(f.operational_profit),0) AS profit,
                COUNT(f.transaction_id) AS orders,
                CASE WHEN SUM(f.revenue)>0 THEN ROUND(SUM(f.operational_profit)/SUM(f.revenue)*100,1) END AS margin
-        {JOINS} {where} AND b.brand_name IS NOT NULL
+        {JOINS} {where} AND f.order_status_key = {_INVOICE} AND b.brand_name IS NOT NULL
         GROUP BY b.brand_name ORDER BY revenue DESC"""
         return rows(db, sql, p)
     return cached("brands", f.as_params(), q)

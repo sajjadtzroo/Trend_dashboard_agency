@@ -1,0 +1,74 @@
+<script setup lang="ts">
+definePageMeta({ layout: false });
+const auth = useAuthStore();
+const route = useRoute();
+
+const username = ref("");
+const password = ref("");
+const error = ref("");
+const busy = ref(false);
+
+async function submit() {
+  error.value = "";
+  busy.value = true;
+  try {
+    await auth.login(username.value, password.value);
+    await navigateTo((route.query.redirect as string) || "/");
+  } catch (e: any) {
+    error.value = e?.response?.status === 429
+      ? "Too many attempts. Please wait a few minutes."
+      : "Invalid username or password.";
+  } finally {
+    busy.value = false;
+  }
+}
+</script>
+
+<template>
+  <div class="login-wrap">
+    <form class="login-card panel" @submit.prevent="submit">
+      <div class="login-brand">
+        <span class="mark">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
+            stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
+        </span>
+        <div>
+          <h1>Debrief</h1>
+          <p class="muted">Finance Dashboard · IRR</p>
+        </div>
+      </div>
+
+      <label class="fld">Username
+        <input v-model="username" type="text" autocomplete="username" required autofocus />
+      </label>
+      <label class="fld">Password
+        <input v-model="password" type="password" autocomplete="current-password" required />
+      </label>
+
+      <p v-if="error" class="login-error" role="alert">{{ error }}</p>
+
+      <button class="login-btn" type="submit" :disabled="busy || !username || !password">
+        {{ busy ? "Signing in…" : "Sign in" }}
+      </button>
+    </form>
+  </div>
+</template>
+
+<style scoped>
+.login-wrap{min-height:100vh;display:grid;place-items:center;padding:24px;
+  background:radial-gradient(70% 50% at 50% 0%, var(--wash) 0%, rgba(250,250,250,0) 60%), var(--bg)}
+.login-card{width:100%;max-width:380px;display:flex;flex-direction:column;gap:16px;margin:0}
+.login-brand{display:flex;align-items:center;gap:12px;margin-bottom:4px}
+.login-brand .mark{width:38px;height:38px;border-radius:11px;background:var(--ink);
+  display:grid;place-items:center;color:#fff;flex:0 0 auto}
+.login-brand h1{font-size:18px;margin:0;color:var(--ink)}
+.login-brand p{margin:2px 0 0;font-size:12px}
+.fld{display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--muted)}
+.fld input{padding:10px 12px;border:1px solid var(--border);border-radius:12px;background:#fff;
+  color:var(--text);font-size:14px}
+.fld input:focus-visible{outline:2px solid var(--primary);outline-offset:1px}
+.login-error{margin:0;color:var(--danger);font-size:13px}
+.login-btn{padding:11px 16px;border:none;border-radius:999px;background:var(--primary);color:#fff;
+  font-weight:600;font-size:14px;cursor:pointer;transition:opacity .15s ease}
+.login-btn:disabled{opacity:.55;cursor:not-allowed}
+</style>

@@ -7,6 +7,7 @@ arithmetic (verified: 360M @ VAT .1 / Ins .1667 -> Receivable 335,988,000).
 Idempotent: each fact carries a stable `source_row` ('Sales!R12'); re-import
 deletes rows with the same provenance before re-inserting.
 """
+import csv
 import warnings
 warnings.filterwarnings("ignore")  # calamine dtype-inference noise
 import polars as pl
@@ -120,6 +121,14 @@ class Importer:
     def _read(self, path, sheet):
         return pl.read_excel(path, sheet_name=sheet, engine="calamine").to_dicts()
 
+    def _read_csv(self, path):
+        """Sales Funnel CSV: row 0 is a totals banner, row 1 the header (multiline cells),
+        rows 2+ the data. Header keys are whitespace-collapsed so 'Total\\nRevenue' -> one key."""
+        with open(path, encoding="utf-8-sig", newline="") as fh:
+            rows = list(csv.reader(fh))
+        header = [" ".join(h.split()) for h in rows[1]]
+        return [dict(zip(header, r)) for r in rows[2:]]
+
     # ---- per-sheet ----
     def import_sales(self, path):
         for i, r in enumerate(self._read(path, "Sales"), start=2):
@@ -145,6 +154,36 @@ class Importer:
                 revenue=rev, cost=cost, operational_profit=op,
                 profit_margin=round(op / rev, 4) if rev else None,
                 fulfillment_pct=clean_percent(r.get("Fulfillment %")))
+
+    def import_sales_csv(self, path):
+        """Sales Funnel CSV -> SALE facts. Revenue/cost/op-profit come from the `Total …`
+        columns (per-channel columns are blank on almost every row). Blank/spacer rows with
+        no company are skipped."""
+        for i, r in enumerate(self._read_csv(path), start=3):   # data starts at file row 3
+            company = canon_company(r.get("Company Name"))
+            if not company:
+                self.skipped_blank += 1
+                continue
+            sr = f"Sales!R{i}"
+            ck = self.client(company, clean_text(r.get("National Code")), clean_text(r.get("Category")))
+            pk = self.project(clean_text(r.get("Project ID No.")), None, ck)
+            rev = clean_number(r.get("Total Revenue IRR")) or 0
+            cost = clean_number(r.get("Total Cost IRR")) or 0
+            op = clean_number(r.get("Total Op. Proftit IRR"))    # sheet's own header typo
+            if op is None:
+                op = rev - cost
+            service = clean_text(r.get("Main Service"))
+            self._fact("SALE", sr,
+                date_key=self._date_csv(r), user_key=self.user(clean_text(r.get("Account"))),
+                client_key=ck, brand_key=self.brand(canon_brand(r.get("Brand")), ck),
+                project_key=pk, campaign_key=self.campaign(clean_text(r.get("Order Name")), pk),
+                service_key=self.lookup("service", "dim_service", "service_key", "service_name", service),
+                media_key=self.lookup("media", "dim_media", "media_key", "media_name", service),
+                order_status_key=self.lookup("order_status", "dim_order_status", "order_status_key", "label",
+                                             clean_text(r.get("Order Status"))),
+                revenue=rev, cost=cost, operational_profit=op,
+                profit_margin=round(op / rev, 4) if rev else None,
+                fulfillment_pct=clean_percent(r.get("Order Fulfillment")))
 
     def import_invoices(self, path):
         for i, r in enumerate(self._read(path, "Invoices"), start=2):
@@ -199,6 +238,13 @@ class Importer:
             self.missing_day += 1          # aggregated into one note in run()
         return upsert_date(self.db, y, m, d)
 
+    def _date_csv(self, r):
+        """CSV carries year + month only (no day). Prefer the invoice month (sparse),
+        fall back to the order-brief month; day defaults to 1."""
+        y = clean_number(r.get("Year"))
+        m = clean_number(r.get("Date of Invoice")) or clean_number(r.get("Date of Order Brief"))
+        return upsert_date(self.db, y, m, 1) if (y and m) else None
+
     def _pay(self, v):
         n = clean_number(v)
         return int(n) if n in (0, 1, 2) else 0  # default Unpaid
@@ -210,5 +256,12 @@ class Importer:
         self.db.commit()
         if self.missing_day:
             self.notes.append(f"{self.missing_day} rows had no Jalali day; defaulted to 1")
+        return {"inserted": self.summary, "skipped_blank": self.skipped_blank,
+                "notes": self.notes[:50], "total": sum(self.summary.values())}
+
+    def run_csv(self, path):
+        """Seed path: Sales Funnel CSV only (SALE facts)."""
+        self.import_sales_csv(path)
+        self.db.commit()
         return {"inserted": self.summary, "skipped_blank": self.skipped_blank,
                 "notes": self.notes[:50], "total": sum(self.summary.values())}

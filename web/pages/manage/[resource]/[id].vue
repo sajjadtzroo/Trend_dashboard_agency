@@ -13,7 +13,8 @@ const name = computed(() => {
   return it.order_name || it.account || it.project_code || it.media_name || it.project_name || `#${id.value}`;
 });
 const txns = computed<any[]>(() => data.value?.transactions || []);
-const sales = computed(() => txns.value.filter((t) => t.transaction_type === "SALE"));
+// revenue = invoiced only, consistent with every other card/chart in the app
+const sales = computed(() => txns.value.filter((t) => t.transaction_type === "SALE" && t.order_status === "Invoice"));
 const sum = (a: any[], k: string) => a.reduce((s, r) => s + Number(r[k] || 0), 0);
 
 const kpi = computed(() => {

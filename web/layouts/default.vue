@@ -3,6 +3,7 @@ import { useFilters } from "~/stores/filters";
 
 const filters = useFilters();
 const route = useRoute();
+const auth = useAuthStore();
 
 // Lucide-style glyphs (stroked paths) so nav is scannable, matching the KPI icons.
 const groups = [
@@ -53,7 +54,7 @@ if (meta.value) filters.meta = meta.value;
             <path d="M20 6 9 17l-5-5" />
           </svg>
         </span>
-        <h1>Creative Lab</h1>
+        <h1>Debrief</h1>
         <button class="collapse-btn" :aria-label="collapsed ? 'Expand sidebar' : 'Collapse sidebar'"
           :aria-pressed="collapsed" @click="toggleCollapse">
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
@@ -74,6 +75,19 @@ if (meta.value) filters.meta = meta.value;
           </NuxtLink>
         </template>
       </nav>
+      <div class="side-foot">
+        <span class="chip-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8" /></svg>
+        </span>
+        <span class="lbl">{{ auth.user?.username || "—" }}</span>
+        <button class="collapse-btn" title="Log out" aria-label="Log out" @click="auth.logout()">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" /></svg>
+        </button>
+      </div>
     </aside>
     <main>
       <div class="bar">
@@ -100,5 +114,6 @@ if (meta.value) filters.meta = meta.value;
       </div>
       <slot />
     </main>
+    <ChatPanel />
   </div>
 </template>

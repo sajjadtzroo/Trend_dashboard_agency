@@ -1,0 +1,17 @@
+# API deploys from repo root — keep the upload to what Dockerfile.api needs
+# (app/, requirements.txt, schema.sql, the seed CSV). Exclude everything else.
+web/
+.git/
+__pycache__/
+*.pyc
+.venv/
+venv/
+docs_sample/
+scripts/
+graph.mmd
+RAG_CHATBOT_PLAN.md
+DEPLOY.md
+[ACC] Internal Finance Tracker 2026- Sajad .xlsx
+import_template.xlsx
+Sajjad Copy of 1405 Creative Lab Income Statement - Sales Funnel.csv
+.DS_Store

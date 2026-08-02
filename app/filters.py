@@ -55,6 +55,12 @@ def get_filters(
     return Filters(date_from, date_to, client, brand, service, user, transaction_type)
 
 
+# Recognized-revenue gate: only SALE lines that reached the 'Invoice' funnel stage
+# count as revenue/cost/profit anywhere in the app (matches the source sheet's totals).
+# The funnel endpoint is the sole exception — it shows every stage by definition.
+INVOICED = "f.order_status_key = (SELECT order_status_key FROM dim_order_status WHERE label='Invoice')"
+
+
 # Standard joins every aggregate query builds on.
 JOINS = """
 FROM fact_transaction f

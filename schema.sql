@@ -228,8 +228,20 @@ INSERT INTO dim_payment_method (label)
     ON CONFLICT (label) DO NOTHING;
 
 INSERT INTO dim_order_status (label, funnel_rank)
-    VALUES ('Opportuinity',1),('Confirm',2),('Invoice',3),('Decline',9)
+    VALUES ('Opportuinity',1),('Proposal',2),('Confirm',3),('Invoice',4),('Suspend',8),('Decline',9)
     ON CONFLICT (label) DO NOTHING;
+
+-- =====================================================================
+-- AUTH — dashboard login accounts (separate from dim_user salespeople)
+-- =====================================================================
+CREATE TABLE IF NOT EXISTS app_user (
+    id            BIGSERIAL PRIMARY KEY,
+    username      TEXT NOT NULL UNIQUE,
+    password_hash TEXT NOT NULL,
+    token_version INTEGER NOT NULL DEFAULT 0,   -- bump to revoke every session at once
+    is_active     BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+);
 
 COMMIT;
 

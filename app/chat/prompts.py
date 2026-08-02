@@ -26,7 +26,8 @@ METRIC DEFINITIONS — use these EXACT expressions; they are the dashboard's sou
   op_profit  = revenue - cost
   AR balance = COALESCE(SUM(f.balance) FILTER (WHERE f.transaction_type='RECEIVABLE'),0)
   AP balance = COALESCE(SUM(f.balance) FILTER (WHERE f.transaction_type='PAYABLE'),0)
-Do NOT use the SALE rows' self-reported revenue/cost columns for these metrics.
+revenue/cost = realized SALE lines (Invoice funnel stage), from the SALE columns.
+AR/AP balances may be empty (no invoice/supplier ledger is loaded) — if so, say so.
 
 Filter client/brand/service by dim name columns (c.company_name, b.brand_name, sv.service_name).
 

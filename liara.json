@@ -1,0 +1,8 @@
+{
+  "platform": "docker",
+  "app": "debrief-api",
+  "port": 8000,
+  "build": {
+    "dockerfile": "Dockerfile.api"
+  }
+}

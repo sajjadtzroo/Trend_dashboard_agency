@@ -22,7 +22,7 @@ from langgraph.graph.message import add_messages
 from pydantic import BaseModel
 from sqlalchemy import text
 
-from ..config import LLM_MODEL, OPENROUTER_BASE_URL, OPENROUTER_API_KEY
+from ..config import LLM_MODEL, LLM_FALLBACK, OPENROUTER_BASE_URL, OPENROUTER_API_KEY
 from ..db import SessionLocal
 from .normalize import normalize
 from .retrieval import hybrid_search
@@ -80,6 +80,8 @@ def _get_llm() -> ChatOpenAI:
     return ChatOpenAI(
         model=LLM_MODEL, base_url=OPENROUTER_BASE_URL,
         api_key=OPENROUTER_API_KEY, temperature=1.0, streaming=True,
+        # OpenRouter model-fallback chain (preview→GA swaps, deprecation) — plan risk #3.
+        extra_body={"models": [LLM_MODEL, LLM_FALLBACK]} if LLM_FALLBACK else {},
     )
 
 

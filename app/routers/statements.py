@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from ..db import get_db
 from ..cache import cached
-from ..filters import Filters, get_filters, JOINS
+from ..filters import Filters, get_filters, JOINS, INVOICED
 from ..queries import rows
 
 router = APIRouter(prefix="/statements", tags=["statements"])
@@ -15,9 +15,9 @@ def _scalars(db: Session, f: Filters) -> dict:
     where, p = f.where()
     sql = f"""
     SELECT
-      COALESCE(SUM(revenue)            FILTER (WHERE f.transaction_type='SALE'),0)       AS revenue,
-      COALESCE(SUM(cost)               FILTER (WHERE f.transaction_type='SALE'),0)       AS cost,
-      COALESCE(SUM(operational_profit) FILTER (WHERE f.transaction_type='SALE'),0)       AS operating_profit,
+      COALESCE(SUM(revenue)            FILTER (WHERE f.transaction_type='SALE' AND {INVOICED}),0) AS revenue,
+      COALESCE(SUM(cost)               FILTER (WHERE f.transaction_type='SALE' AND {INVOICED}),0) AS cost,
+      COALESCE(SUM(operational_profit) FILTER (WHERE f.transaction_type='SALE' AND {INVOICED}),0) AS operating_profit,
       COALESCE(SUM(vat_amount)         FILTER (WHERE f.transaction_type='RECEIVABLE'),0) AS vat,
       COALESCE(SUM(balance)            FILTER (WHERE f.transaction_type='RECEIVABLE'),0) AS receivables,
       COALESCE(SUM(insurance_amount)   FILTER (WHERE f.transaction_type='RECEIVABLE'),0) AS insurance_retention,
@@ -151,7 +151,7 @@ def segments(by: str = "campaign", db: Session = Depends(get_db), f: Filters = D
                    COUNT(f.transaction_id) AS orders,
                    CASE WHEN SUM(f.revenue)>0
                         THEN ROUND(SUM(f.operational_profit)/SUM(f.revenue)*100,1) END AS margin
-            {JOINS}{join}{where}
+            {JOINS}{join}{where} AND {INVOICED}
             GROUP BY {grp}
             HAVING {grp} IS NOT NULL AND (SUM(f.revenue)<>0 OR SUM(f.cost)<>0)
             ORDER BY revenue DESC""", p)
@@ -165,7 +165,7 @@ def notes(db: Session = Depends(get_db), f: Filters = Depends(get_filters)):
         where, p = f.where(type_default="SALE")
         by_service = rows(db, f"""
             SELECT sv.service_name AS service, COALESCE(SUM(f.revenue),0) AS revenue
-            {JOINS} {where} GROUP BY sv.service_name ORDER BY revenue DESC""", p)
+            {JOINS} {where} AND {INVOICED} GROUP BY sv.service_name ORDER BY revenue DESC""", p)
         return {"revenue_by_service": {"standard": "IFRS 15", "rows": by_service},
                 "note": "Ageing of receivables/payables (IFRS 7) available on the Receivables/Payables pages."}
     return cached("stmt-notes", f.as_params(), q)

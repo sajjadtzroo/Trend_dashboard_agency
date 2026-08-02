@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from ..db import get_db
 from ..cache import invalidate_aggregates, cached
 from ..queries import rows
+from ..filters import INVOICED
 
 router = APIRouter(prefix="/manage", tags=["management"])
 
@@ -69,7 +70,9 @@ def _res(resource):
 @router.get("/{resource}")
 def list_resource(resource: str, db: Session = Depends(get_db)):
     _res(resource)
-    return cached(f"manage-{resource}", {}, lambda: rows(db, LIST_SQL[resource], {}))
+    # revenue = invoiced only, consistent with the rest of the app
+    sql = LIST_SQL[resource].replace("f.transaction_type='SALE'", f"f.transaction_type='SALE' AND {INVOICED}")
+    return cached(f"manage-{resource}", {}, lambda: rows(db, sql, {}))
 
 
 @router.get("/{resource}/{item_id}")

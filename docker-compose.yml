@@ -37,6 +37,12 @@ services:
       CORS_ORIGINS: "http://localhost:3000"
       LLM_MODEL: "google/gemini-3.6-flash"
       OPENROUTER_API_KEY: "${OPENROUTER_API_KEY:-}"   # supply via shell/.env; empty is fine until you use /chat
+      EMBED_INPUT_TYPE: "1"                           # probe 2026-07-26: OpenRouter honors input_type + dimensions
+      # --- auth --- override JWT_SECRET in any real deployment
+      JWT_SECRET: "${JWT_SECRET:-dev-insecure-change-me}"
+      COOKIE_SECURE: "0"                              # local dev is plain http; set 1 behind HTTPS
+      ADMIN_USERNAME: "${ADMIN_USERNAME:-admin}"
+      ADMIN_PASSWORD: "${ADMIN_PASSWORD:-admin12345}"
     volumes:
       - ./docs_sample:/app/docs_sample:ro             # corpus for `python -m app.chat.ingest`
     depends_on:
