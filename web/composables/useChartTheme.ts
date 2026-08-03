@@ -34,6 +34,8 @@ const base = () => ({
   maintainAspectRatio: false,
   animation: reduced() ? (false as const) : { duration: 500, easing: "easeOutQuart" as const },
   elements: { bar: { borderRadius: 6, borderSkipped: false as const } },
+  // Hover anywhere along a category shows every series' value (not just the bar you're on).
+  interaction: { mode: "index" as const, intersect: false },
   plugins: {
     legend: { position: "bottom" as const, labels: { usePointStyle: true, boxWidth: 8, padding: 16 } },
     tooltip: {
@@ -70,6 +72,7 @@ export function lineOptions() {
 export function doughnutOptions() {
   const o: any = base();
   o.cutout = "62%";
+  o.interaction = { mode: "nearest", intersect: true };   // per-slice hover
   o.plugins.legend.position = "right";
   o.plugins.tooltip.callbacks.label = (ctx: any) => ` ${ctx.label}: ${irrFull(ctx.parsed)}`;
   return o;
@@ -78,6 +81,7 @@ export function doughnutOptions() {
 // Sankey flow diagram. `money`=true formats flows as IRR, else as plain counts.
 export function sankeyOptions(money = true) {
   const o: any = base();
+  o.interaction = { mode: "nearest", intersect: true };   // per-flow hover
   o.plugins.legend.display = false;
   const fmt = (v: number) => (money ? irrFull(v) : String(Math.round(v)));
   o.plugins.tooltip.callbacks.label = (ctx: any) =>
