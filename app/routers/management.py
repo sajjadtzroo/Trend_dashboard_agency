@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from ..db import get_db
 from ..cache import invalidate_aggregates, cached
 from ..queries import rows
-from ..filters import INVOICED
+from ..filters import INVOICED, JOINS, Filters, get_filters
 
 router = APIRouter(prefix="/manage", tags=["management"])
 
@@ -18,46 +18,46 @@ RES = {
     "media":     {"table": "dim_media",    "key": "media_key",    "name": "media_name",  "fk": "media_key"},
 }
 
-# per-resource list SQL with roll-ups (SALE facts)
+# Per-resource roll-ups. Fact-first (via the shared JOINS) so the standard filter
+# bar — client/service/user/date — applies, same as every other endpoint. {where}
+# already carries transaction_type='SALE'; we add the invoiced gate + soft-delete flag.
 LIST_SQL = {
     "campaigns": """
-        SELECT cm.campaign_key AS id, cm.order_name AS name, pr.project_code AS project,
-               c.company_name AS client, COUNT(f.transaction_id) AS rows,
+        SELECT cm.campaign_key AS id, cm.order_name AS name, MAX(pr.project_code) AS project,
+               MAX(c.company_name) AS client, COUNT(f.transaction_id) AS rows,
                COALESCE(SUM(f.revenue),0) AS revenue, COALESCE(SUM(f.cost),0) AS cost,
                COALESCE(SUM(f.operational_profit),0) AS profit,
                CASE WHEN SUM(f.revenue)>0 THEN ROUND(SUM(f.operational_profit)/SUM(f.revenue)*100,1) END AS margin
-        FROM dim_campaign cm
+        {JOINS}
+        LEFT JOIN dim_campaign cm ON cm.campaign_key = f.campaign_key
         LEFT JOIN dim_project pr ON pr.project_key = cm.project_key
-        LEFT JOIN dim_client c ON c.client_key = pr.client_key
-        LEFT JOIN fact_transaction f ON f.campaign_key = cm.campaign_key AND f.transaction_type='SALE'
-        WHERE cm.is_active GROUP BY cm.campaign_key, cm.order_name, pr.project_code, c.company_name
-        ORDER BY revenue DESC""",
+        {where} AND {INVOICED} AND cm.is_active
+        GROUP BY cm.campaign_key, cm.order_name ORDER BY revenue DESC""",
     "projects": """
-        SELECT pr.project_key AS id, pr.project_code AS name, pr.project_name AS title,
-               c.company_name AS client, COUNT(f.transaction_id) AS rows,
+        SELECT pr.project_key AS id, pr.project_code AS name, MAX(pr.project_name) AS title,
+               MAX(c.company_name) AS client, COUNT(f.transaction_id) AS rows,
                COALESCE(SUM(f.revenue),0) AS revenue, COALESCE(SUM(f.cost),0) AS cost,
                COALESCE(SUM(f.operational_profit),0) AS profit,
                (SELECT COUNT(*) FROM dim_campaign cm WHERE cm.project_key = pr.project_key) AS campaigns
-        FROM dim_project pr
-        LEFT JOIN dim_client c ON c.client_key = pr.client_key
-        LEFT JOIN fact_transaction f ON f.project_key = pr.project_key AND f.transaction_type='SALE'
-        WHERE pr.is_active GROUP BY pr.project_key, pr.project_code, pr.project_name, c.company_name
-        ORDER BY revenue DESC""",
+        {JOINS}
+        LEFT JOIN dim_project pr ON pr.project_key = f.project_key
+        {where} AND {INVOICED} AND pr.is_active
+        GROUP BY pr.project_key, pr.project_code ORDER BY revenue DESC""",
     "users": """
-        SELECT u.user_key AS id, u.account AS name, u.role,
+        SELECT u.user_key AS id, u.account AS name, MAX(u.role) AS role,
                COUNT(f.transaction_id) AS rows, COALESCE(SUM(f.revenue),0) AS revenue,
                COALESCE(SUM(f.operational_profit),0) AS profit,
                CASE WHEN SUM(f.revenue)>0 THEN ROUND(SUM(f.operational_profit)/SUM(f.revenue)*100,1) END AS margin
-        FROM dim_user u
-        LEFT JOIN fact_transaction f ON f.user_key = u.user_key AND f.transaction_type='SALE'
-        WHERE u.is_active GROUP BY u.user_key, u.account, u.role ORDER BY revenue DESC""",
+        {JOINS}
+        {where} AND {INVOICED} AND u.is_active
+        GROUP BY u.user_key, u.account ORDER BY revenue DESC""",
     "media": """
         SELECT m.media_key AS id, m.media_name AS name,
                COUNT(f.transaction_id) AS rows, COALESCE(SUM(f.revenue),0) AS revenue,
                COALESCE(SUM(f.cost),0) AS cost, COALESCE(SUM(f.operational_profit),0) AS profit
-        FROM dim_media m
-        LEFT JOIN fact_transaction f ON f.media_key = m.media_key AND f.transaction_type='SALE'
-        WHERE m.is_active GROUP BY m.media_key, m.media_name ORDER BY revenue DESC""",
+        {JOINS} LEFT JOIN dim_media m ON m.media_key = f.media_key
+        {where} AND {INVOICED} AND m.is_active
+        GROUP BY m.media_key, m.media_name ORDER BY revenue DESC""",
 }
 
 
@@ -68,11 +68,13 @@ def _res(resource):
 
 
 @router.get("/{resource}")
-def list_resource(resource: str, db: Session = Depends(get_db)):
+def list_resource(resource: str, db: Session = Depends(get_db), f: Filters = Depends(get_filters)):
     _res(resource)
-    # revenue = invoiced only, consistent with the rest of the app
-    sql = LIST_SQL[resource].replace("f.transaction_type='SALE'", f"f.transaction_type='SALE' AND {INVOICED}")
-    return cached(f"manage-{resource}", {}, lambda: rows(db, sql, {}))
+    def q():
+        where, p = f.where(type_default="SALE")
+        sql = LIST_SQL[resource].format(JOINS=JOINS, where=where, INVOICED=INVOICED)
+        return rows(db, sql, p)
+    return cached(f"manage-{resource}", f.as_params(), q)
 
 
 @router.get("/{resource}/{item_id}")
