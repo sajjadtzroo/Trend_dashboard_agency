@@ -15,8 +15,9 @@ const paths: Record<string, string> = {
   ap: "M20 4H4v12h16zM4 20h16",
   total: "M4 6h16M4 12h16M4 18h10",
 };
+// semantic: green = positive (revenue/profit), amber = attention (cost/AR/AP), grey = neutral
 const cls: Record<string, string> = {
-  revenue: "ic-green", cost: "ic-coral", profit: "ic-green", margin: "ic-lav", ar: "ic-yellow", ap: "ic-coral", total: "ic-green",
+  revenue: "ic-green", profit: "ic-green", cost: "ic-amber", ar: "ic-amber", ap: "ic-amber", margin: "ic-lav", total: "ic-lav",
 };
 </script>
 

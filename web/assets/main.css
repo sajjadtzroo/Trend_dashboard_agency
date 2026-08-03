@@ -4,11 +4,15 @@
   --ink:#18181B; --text:#27272A; --muted:#52525B; --border:#E4E4E7;  /* muted darkened to pass AA on tinted rows */
   --grey-100:#F4F4F5; --grey-200:#E4E4E7; --grey-300:#D4D4D8; --grey-400:#A1A1AA; --grey-600:#52525B;
   --primary:#2E7D32; --accent:#43A047; --accent-surface:#E9F1EA;   /* green = the one accent */
-  --pos:#2E7D32; --neg:#52525B; --danger:#C62828; --amber:#B58A12;
-  --radius:18px;
-  --shadow-sm:0 1px 2px rgba(24,24,27,.06);
-  --shadow-md:0 4px 20px rgba(24,24,27,.06);
-  --shadow-lg:0 12px 36px rgba(24,24,27,.10);
+  --pos:#2E7D32; --neg:#52525B; --danger:#C62828; --amber:#B58A12; --amber-surface:#FaF3DE;
+  /* radius: cards 14, controls 10, badges/tabs stay pill */
+  --radius:14px; --radius-sm:10px;
+  /* layered, crisper shadows so cards read as floating on white */
+  --shadow-sm:0 1px 2px rgba(24,24,27,.08);
+  --shadow-md:0 2px 6px rgba(24,24,27,.08), 0 1px 2px rgba(24,24,27,.05);
+  --shadow-lg:0 14px 34px rgba(24,24,27,.12);
+  /* 8px-based spacing scale */
+  --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:24px; --sp-6:32px;
 }
 *{box-sizing:border-box}
 html,body,#__nuxt{height:100%}
@@ -56,18 +60,20 @@ nav .grp{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(
 }
 
 /* ---------- Main + subtle grey wash ---------- */
-main{padding:22px 28px;position:relative;
+main{padding:24px 28px;position:relative;max-width:1640px;
   background:radial-gradient(60% 45% at 100% 0%, var(--wash) 0%, rgba(250,250,250,0) 60%), var(--bg);
   background-attachment:fixed}
-h2{font-size:21px;margin:0 0 18px;letter-spacing:-.02em;color:var(--ink)}
+h2{font-size:24px;font-weight:700;margin:0 0 20px;letter-spacing:-.02em;color:var(--ink)}
 
 /* ---------- Filter bar (sticky, translucent pill row) ---------- */
 .bar{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;background:rgba(255,255,255,.75);
   backdrop-filter:blur(12px) saturate(140%);border:1px solid var(--border);border-radius:var(--radius);
   padding:14px 16px;margin-bottom:22px;position:sticky;top:12px;z-index:20;box-shadow:var(--shadow-sm)}
 .bar label{display:flex;flex-direction:column;font-size:11px;color:var(--muted);gap:4px}
-.bar select{padding:8px 12px;border:1px solid var(--border);border-radius:999px;background:#fff;color:var(--text);min-width:130px}
-.bar button{margin-inline-start:auto;padding:8px 16px;border:1px solid var(--border);background:#fff;border-radius:999px;cursor:pointer;color:var(--muted);transition:transform .12s ease}
+.bar select{padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);background:#fff;color:var(--text);min-width:130px;transition:border-color .15s ease}
+.bar select:hover{border-color:var(--grey-400)}
+.bar button{margin-inline-start:auto;padding:8px 16px;border:1px solid var(--border);background:#fff;border-radius:var(--radius-sm);cursor:pointer;color:var(--muted);transition:background .15s ease,color .15s ease,transform .15s ease}
+.bar button:hover{background:var(--surface);color:var(--ink)}
 .bar button:active{transform:scale(.96)}
 
 /* ---------- KPI + cards ---------- */
@@ -93,6 +99,7 @@ h2{font-size:21px;margin:0 0 18px;letter-spacing:-.02em;color:var(--ink)}
 .chip-icon{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;flex:0 0 auto;background:var(--surface);color:var(--grey-600)}
 .chip-icon svg{width:18px;height:18px}
 .ic-green{background:var(--accent-surface);color:var(--primary)}
+.ic-amber{background:var(--amber-surface);color:var(--amber)}
 .ic-coral,.ic-yellow,.ic-lav{background:var(--surface);color:var(--grey-600)}
 
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:24px}
@@ -117,14 +124,15 @@ tbody tr:hover{background:var(--surface)}
 tr:last-child td{border-bottom:none}
 .pos{color:var(--pos)} .neg{color:var(--neg)}
 
-.chip{display:inline-block;padding:2px 10px;border-radius:999px;font-size:11px;font-weight:600}
+.chip{display:inline-block;padding:2px 10px;border-radius:999px;font-size:11px;font-weight:600;background:var(--surface);color:var(--muted)}
 .chip.Paid{background:var(--accent-surface);color:var(--primary)}
 .chip.Unpaid{background:var(--surface);color:var(--muted)}
-.chip.Partial{background:var(--surface);color:var(--amber)}
+.chip.Partial{background:var(--amber-surface);color:var(--amber)}
 
 /* ---------- Tabs as pills ---------- */
 .tabs{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
-.tabs button{padding:8px 18px;border:1px solid var(--border);background:#fff;border-radius:999px;cursor:pointer;color:var(--muted);transition:transform .12s ease}
+.tabs button{padding:8px 18px;border:1px solid var(--border);background:#fff;border-radius:var(--radius-sm);cursor:pointer;color:var(--muted);transition:background .15s ease,color .15s ease,transform .15s ease}
+.tabs button:hover{background:var(--surface);color:var(--ink)}
 .tabs button:active{transform:scale(.96)}
 .tabs button.active{background:var(--ink);color:#fff;border-color:var(--ink);box-shadow:var(--shadow-sm)}
 
@@ -132,14 +140,16 @@ tr:last-child td{border-bottom:none}
 .stmt td.indent:first-child{padding-left:26px;color:var(--muted)}
 .note{color:var(--muted);font-size:12px;margin-top:12px;font-style:italic}
 .muted{color:var(--muted)}
-.btn{padding:7px 14px;border:1px solid var(--border);background:#fff;border-radius:999px;cursor:pointer;color:var(--text);transition:transform .12s ease}
+.btn{padding:7px 14px;border:1px solid var(--border);background:#fff;border-radius:var(--radius-sm);cursor:pointer;color:var(--text);transition:background .15s ease,color .15s ease,transform .15s ease}
+.btn:hover{background:var(--surface)}
 .btn:active{transform:scale(.96)}
 .btn.danger{color:var(--danger);border-color:#f0c9c9;background:rgba(198,40,40,.08)}
 .drop{border:2px dashed var(--grey-300);border-radius:var(--radius);padding:40px;text-align:center;color:var(--muted);background:var(--surface)}
 
 /* ---------- Empty / loading ---------- */
 /* min-height matches .skeleton/.chart-box so loading→empty→chart never jumps */
-.empty{display:grid;place-items:center;min-height:280px;color:var(--muted);font-size:13px;text-align:center}
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;min-height:280px;color:var(--muted);font-size:13px;text-align:center}
+.empty-ic{color:var(--grey-300)}
 .table-empty{text-align:center;padding:20px;color:var(--muted)}
 .skeleton{height:280px;border-radius:12px;background:linear-gradient(90deg,#f0f0f1 25%,#f7f7f8 37%,#f0f0f1 63%);
   background-size:400% 100%;animation:shimmer 1.4s ease infinite}
@@ -148,7 +158,8 @@ tr:last-child td{border-bottom:none}
 .chart-box{height:280px;position:relative;resize:both;overflow:hidden;max-width:100%;min-height:180px}
 .chart-box::-webkit-resizer{background:var(--surface)}
 @media (max-width:480px){.chart-box{height:auto;aspect-ratio:4/3;resize:none}}
-.chart-dl{position:absolute;top:6px;right:6px;z-index:2;display:flex;gap:4px;opacity:0;transition:opacity .15s ease}
+/* visible by default so touch devices (no hover) can export; fuller on hover */
+.chart-dl{position:absolute;top:6px;right:6px;z-index:2;display:flex;gap:4px;opacity:.5;transition:opacity .15s ease}
 .chart-box:hover .chart-dl,.chart-dl:focus-within{opacity:1}
 .chart-dl button{border:1px solid var(--border);background:rgba(255,255,255,.92);border-radius:8px;
   padding:2px 7px;height:24px;font-size:10px;font-weight:600;letter-spacing:.02em;cursor:pointer;color:var(--muted)}
@@ -192,7 +203,8 @@ a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible,.l
   .bar{position:static;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch}
   .bar label{flex:0 0 auto}
   .bar select,.bar button{min-height:44px}
-  .panel{overflow-x:auto}
+  /* right-edge inset shadow hints that the table scrolls horizontally */
+  .panel{overflow-x:auto;box-shadow:var(--shadow-md), inset -12px 0 12px -12px rgba(24,24,27,.22)}
   .panel table{min-width:520px}
 }
 @media (max-width:480px){
@@ -203,7 +215,7 @@ a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible,.l
 
 /* ---------- Data grids: toolbar, search, zebra, sortable headers, sticky 1st col ---------- */
 .grid-toolbar{display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap}
-.search{padding:8px 14px 8px 34px;border:1px solid var(--border);border-radius:999px;background:#fff
+.search{padding:8px 14px 8px 34px;border:1px solid var(--border);border-radius:var(--radius-sm);background:#fff
   url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%2352525B' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='7' cy='7' r='5'/%3E%3Cpath d='m15 15-4-4'/%3E%3C/svg%3E") 12px center/16px no-repeat;
   color:var(--text);min-width:240px;font-size:13px}
 .grid-toolbar .count{margin-inline-start:auto;color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums}
@@ -224,7 +236,7 @@ a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible,.l
 .daterange{display:flex;flex-direction:column;gap:4px;position:relative}
 .dr-cap{font-size:11px;color:var(--muted)}
 .dr-trigger{display:flex;align-items:center;gap:8px;padding:8px 12px;min-width:190px;border:1px solid var(--border);
-  border-radius:999px;background:#fff;color:var(--text);cursor:pointer;font-size:13px;transition:border-color .15s ease}
+  border-radius:var(--radius-sm);background:#fff;color:var(--text);cursor:pointer;font-size:13px;transition:border-color .15s ease}
 .dr-trigger:hover{border-color:var(--grey-400)}
 .dr-trigger.active{border-color:var(--primary);color:var(--primary)}
 .dr-trigger svg{flex:0 0 auto;color:var(--muted)}
@@ -265,6 +277,18 @@ a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible,.l
 .spin{animation:spin 1s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 @media (max-width:600px){.gsync{flex-wrap:wrap}.gsync-btn{width:100%;justify-content:center}}
+
+/* ---------- Responsive columns: hide secondary cols on laptops/phones ---------- */
+@media (max-width:1200px){ .col-md{display:none} }
+
+/* ---------- Print: statements/tables only, no chrome ---------- */
+@media print{
+  aside,.bar,.chat,.chart-dl,.grid-toolbar{display:none!important}
+  .layout{grid-template-columns:1fr}
+  main{padding:0;max-width:none;background:#fff}
+  .panel,.card{box-shadow:none;border-color:#ccc;break-inside:avoid}
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
 
 /* table drill-in: brand -> projects, and sortable segment headers */
 table button.link{background:none;border:none;padding:0;color:var(--primary);font:inherit;cursor:pointer}

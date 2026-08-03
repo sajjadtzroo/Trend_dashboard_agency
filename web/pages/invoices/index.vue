@@ -29,12 +29,12 @@ const { q, view, sortBy, arrow, count } = useGrid(rows, {
             <th class="s" @click="sortBy('invoice_number')">Invoice #{{ arrow('invoice_number') }}</th>
             <th class="s" @click="sortBy('po_number')">PO{{ arrow('po_number') }}</th>
             <th class="s" @click="sortBy('client')">Client{{ arrow('client') }}</th>
-            <th class="s" @click="sortBy('brand')">Brand{{ arrow('brand') }}</th>
-            <th class="s" @click="sortBy('project')">Project{{ arrow('project') }}</th>
+            <th class="s col-md" @click="sortBy('brand')">Brand{{ arrow('brand') }}</th>
+            <th class="s col-md" @click="sortBy('project')">Project{{ arrow('project') }}</th>
             <th class="s" @click="sortBy('jalali_date')">Date{{ arrow('jalali_date') }}</th>
             <th class="s n" @click="sortBy('amount')">Amount{{ arrow('amount') }}</th>
-            <th class="s n" @click="sortBy('final_amount')">Final{{ arrow('final_amount') }}</th>
-            <th class="s n" @click="sortBy('receivable')">Receivable{{ arrow('receivable') }}</th>
+            <th class="s n col-md" @click="sortBy('final_amount')">Final{{ arrow('final_amount') }}</th>
+            <th class="s n col-md" @click="sortBy('receivable')">Receivable{{ arrow('receivable') }}</th>
             <th class="s n" @click="sortBy('amount_paid')">Paid{{ arrow('amount_paid') }}</th>
             <th class="s n" @click="sortBy('balance')">Balance{{ arrow('balance') }}</th>
             <th class="s" @click="sortBy('status')">Status{{ arrow('status') }}</th>
@@ -47,12 +47,12 @@ const { q, view, sortBy, arrow, count } = useGrid(rows, {
               </td>
               <td>{{ r.po_number || "—" }}</td>
               <td>{{ r.client || "—" }}</td>
-              <td>{{ r.brand || "—" }}</td>
-              <td>{{ r.project || "—" }}</td>
+              <td class="col-md">{{ r.brand || "—" }}</td>
+              <td class="col-md">{{ r.project || "—" }}</td>
               <td>{{ r.jalali_date || "—" }}</td>
               <td class="n">{{ irr(r.amount) }}</td>
-              <td class="n">{{ irr(r.final_amount) }}</td>
-              <td class="n">{{ irr(r.receivable) }}</td>
+              <td class="n col-md">{{ irr(r.final_amount) }}</td>
+              <td class="n col-md">{{ irr(r.receivable) }}</td>
               <td class="n">{{ irr(r.amount_paid) }}</td>
               <td class="n" :class="r.balance < 0 ? 'neg' : ''">{{ irr(r.balance) }}</td>
               <td><StatusChip v-if="r.status" :status="r.status" /><span v-else>—</span></td>
