@@ -14,6 +14,7 @@ const groups = [
     { to: "/payables", label: "Payables", icon: "M12 21V9M7 14l5-5 5 5M5 3h14" },
     { to: "/brands", label: "Brands", icon: "M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L2 12V2h10l8.6 8.6a2 2 0 0 1 0 2.8zM7 7h.01" },
     { to: "/financials", label: "Financials (FP&A)", icon: "M3 3v18h18M8 17v-5M13 17V8M18 17v-9" },
+    { to: "/sales-funnel", label: "Sales Funnel", icon: "M22 3H2l8 9.46V19l4 2v-8.54L22 3z" },
   ] },
   { grp: "Manage", items: [
     { to: "/manage/campaigns", label: "Campaigns", icon: "M3 11v2a1 1 0 0 0 1 1h3l4 4V6L7 10H4a1 1 0 0 0-1 1zM15 8a4 4 0 0 1 0 8" },

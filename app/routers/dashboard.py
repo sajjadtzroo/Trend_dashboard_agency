@@ -85,6 +85,26 @@ def funnel(db: Session = Depends(get_db), f: Filters = Depends(get_filters)):
     return cached("funnel", f.as_params(), q)
 
 
+# Per-stage breakdown for the Sales Funnel section: every status x dimension value.
+FUNNEL_BY = {"account": "u.account", "client": "c.company_name", "service": "sv.service_name"}
+
+
+@router.get("/funnel-breakdown")
+def funnel_breakdown(by: str = "account", db: Session = Depends(get_db), f: Filters = Depends(get_filters)):
+    grp = FUNNEL_BY.get(by, FUNNEL_BY["account"])
+    def q():
+        where, p = f.where(type_default="SALE")
+        sql = f"""
+        SELECT os.label AS order_status, os.funnel_rank, {grp} AS dim,
+               COUNT(*) AS count, COALESCE(SUM(f.revenue),0) AS revenue
+        {JOINS} LEFT JOIN dim_order_status os ON os.order_status_key = f.order_status_key
+        {where} AND {grp} IS NOT NULL
+        GROUP BY os.label, os.funnel_rank, {grp}
+        ORDER BY os.funnel_rank, revenue DESC"""
+        return rows(db, sql, p)
+    return cached("funnel-breakdown", {**f.as_params(), "by": by}, q)
+
+
 @router.get("/revenue-by-service")
 def revenue_by_service(db: Session = Depends(get_db), f: Filters = Depends(get_filters)):
     def q():

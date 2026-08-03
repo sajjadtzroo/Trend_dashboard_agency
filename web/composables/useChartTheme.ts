@@ -74,3 +74,13 @@ export function doughnutOptions() {
   o.plugins.tooltip.callbacks.label = (ctx: any) => ` ${ctx.label}: ${irrFull(ctx.parsed)}`;
   return o;
 }
+
+// Sankey flow diagram. `money`=true formats flows as IRR, else as plain counts.
+export function sankeyOptions(money = true) {
+  const o: any = base();
+  o.plugins.legend.display = false;
+  const fmt = (v: number) => (money ? irrFull(v) : String(Math.round(v)));
+  o.plugins.tooltip.callbacks.label = (ctx: any) =>
+    ` ${ctx.dataset.data[ctx.dataIndex].from} → ${ctx.dataset.data[ctx.dataIndex].to}: ${fmt(ctx.parsed?.flow ?? ctx.raw?.flow ?? 0)}`;
+  return o;
+}
