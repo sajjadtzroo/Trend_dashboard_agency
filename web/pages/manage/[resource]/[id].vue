@@ -61,8 +61,8 @@ const { q, view, sortBy, arrow, count } = useGrid(txns, {
 
 <template>
   <div>
-    <p><NuxtLink :to="`/manage/${resource}`" class="muted">← {{ singular[resource] || resource }}s</NuxtLink></p>
-    <h2>{{ singular[resource] || resource }}: {{ name }}</h2>
+    <PageHeader :title="name"
+      :breadcrumb="[{ label: (singular[resource] || resource) + 's', to: `/manage/${resource}` }, { label: name }]" />
     <p v-if="error" class="neg">Failed to load. Is the API running?</p>
 
     <div class="kpis">

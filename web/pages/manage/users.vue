@@ -37,6 +37,7 @@ const activityBar = computed(() => {
 <template>
   <div>
     <h2>Users / Managers</h2>
+    <ManageNav />
     <div class="kpis">
       <KpiCard label="Total Revenue" icon="revenue" variant="dark" :value="irrC(rev)" />
       <KpiCard label="Total Profit" icon="profit" :value="irrC(prof)" :tone="prof >= 0 ? 'pos' : 'neg'" />

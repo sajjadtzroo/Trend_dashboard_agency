@@ -74,11 +74,10 @@ async function removePayment(pid: number) {
 
 <template>
   <div>
-    <p><NuxtLink to="/invoices" class="muted">← Invoices</NuxtLink></p>
-    <h2>
-      Invoice {{ inv.invoice_number || "#" + id }}
-      <StatusChip v-if="inv.status" :status="inv.status" />
-    </h2>
+    <PageHeader :title="`Invoice ${inv.invoice_number || '#' + id}`"
+      :breadcrumb="[{ label: 'Invoices', to: '/invoices' }, { label: inv.invoice_number || '#' + id }]">
+      <template #actions><StatusChip v-if="inv.status" :status="inv.status" /></template>
+    </PageHeader>
     <p v-if="error" class="neg">Failed to load. Is the API running?</p>
 
     <div class="grid2">

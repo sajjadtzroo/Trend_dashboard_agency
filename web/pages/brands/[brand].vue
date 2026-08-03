@@ -30,8 +30,8 @@ const share = computed(() => {
 
 <template>
   <div>
-    <NuxtLink to="/brands" class="muted" style="display:inline-block;margin-bottom:10px">← All brands</NuxtLink>
-    <h2>{{ name }} <span v-if="b?.client" class="muted" style="font-weight:400">· {{ b.client }}</span></h2>
+    <PageHeader :title="b?.client ? `${name} · ${b.client}` : name"
+      :breadcrumb="[{ label: 'Brands', to: '/brands' }, { label: name }]" />
 
     <div class="kpis">
       <KpiCard label="Revenue" icon="revenue" variant="dark" :value="irrC(b?.revenue)" />

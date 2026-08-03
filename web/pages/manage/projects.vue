@@ -24,6 +24,7 @@ const profitChart = computed(() => {
 <template>
   <div>
     <h2>Projects</h2>
+    <ManageNav />
     <div class="kpis">
       <KpiCard label="Total Revenue" icon="revenue" variant="dark" :value="irrC(rev)" />
       <KpiCard label="Total Cost" icon="cost" :value="irrC(sumBy(rows, 'cost'))" />
