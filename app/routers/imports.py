@@ -75,6 +75,33 @@ def import_xlsx(file: UploadFile = File(...), db: Session = Depends(get_db)):
         tmp.unlink(missing_ok=True)
 
 
+@router.post("/funnel-csv")
+def import_funnel_csv(file: UploadFile = File(...), db: Session = Depends(get_db)):
+    """Upload a Sales-Funnel CSV (e.g. exported from the Google Sheet) and load it.
+    Authoritative refresh: drops prior sheet-sourced SALE rows, then re-imports."""
+    if not file.filename.lower().endswith(".csv"):
+        raise HTTPException(400, "expected a .csv (Sales Funnel export)")
+    job_id = uuid.uuid4().hex[:12]
+    tmp = Path(tempfile.gettempdir()) / f"funnel_{job_id}.csv"
+    with tmp.open("wb") as out:
+        shutil.copyfileobj(file.file, out)
+    logger.info("funnel-csv import {} started ({})", job_id, file.filename)
+    try:
+        db.execute(text("DELETE FROM fact_transaction WHERE source_row LIKE 'Sales!R%'"))
+        result = Importer(db).run_csv(str(tmp))
+        result.update(status="done", job_id=job_id, source="funnel-csv")
+        set_job(job_id, result)
+        invalidate_aggregates()
+        logger.success("funnel-csv import {} done: {}", job_id, result["inserted"])
+        return result
+    except Exception as e:
+        db.rollback()
+        logger.exception("funnel-csv import {} failed", job_id)
+        raise HTTPException(500, f"funnel import failed: {e}")
+    finally:
+        tmp.unlink(missing_ok=True)
+
+
 @router.get("/status/{job_id}")
 def import_status(job_id: str):
     job = get_job(job_id)
