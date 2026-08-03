@@ -42,7 +42,9 @@ const base = () => ({
       backgroundColor: "#263238", padding: 10, cornerRadius: 10, displayColors: true,
       callbacks: {
         label: (ctx: any) => {
-          const v = ctx.parsed?.y ?? ctx.parsed?.x ?? ctx.parsed;
+          // raw = the datum's value, correct for both vertical & horizontal bars
+          // (for horizontal, parsed.y is the category index, not the value).
+          const v = typeof ctx.raw === "number" ? ctx.raw : (ctx.parsed?.y ?? ctx.parsed?.x ?? ctx.parsed);
           const name = ctx.dataset?.label || ctx.label || "";
           return ` ${name}${name ? ": " : ""}${irrFull(v)}`;
         },
