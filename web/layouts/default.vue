@@ -49,13 +49,8 @@ if (meta.value) filters.meta = meta.value;
   <div class="layout" :class="{ collapsed }">
     <aside>
       <div class="brand">
-        <span class="mark">
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
-            stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M20 6 9 17l-5-5" />
-          </svg>
-        </span>
-        <h1>Debrief</h1>
+        <img src="/debrief.svg" class="brand-word" alt="Debrief" />
+        <img src="/de.svg" class="brand-ic" alt="Debrief" />
         <button class="collapse-btn" :aria-label="collapsed ? 'Expand sidebar' : 'Collapse sidebar'"
           :aria-pressed="collapsed" @click="toggleCollapse">
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"

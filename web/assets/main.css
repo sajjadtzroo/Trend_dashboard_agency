@@ -28,6 +28,8 @@ aside{background:#fff;border-right:1px solid var(--border);padding:22px 14px;pos
 .side-foot .lbl{font-size:13px;font-weight:500;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .side-foot .collapse-btn{margin-inline-start:auto}
 .brand{display:flex;align-items:center;gap:10px;margin-bottom:4px}
+.brand-word{height:22px;width:auto;max-width:150px}      /* full wordmark (expanded) */
+.brand-ic{height:26px;width:auto;display:none}           /* "de" mark (collapsed) */
 .brand .mark{width:34px;height:34px;border-radius:11px;background:var(--ink);
   display:grid;place-items:center;color:#fff;box-shadow:var(--shadow-sm)}
 aside h1{font-size:16px;margin:0;color:var(--ink);letter-spacing:-.01em}
@@ -48,9 +50,10 @@ nav .grp{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(
 @media (min-width:769px){
   .layout.collapsed{grid-template-columns:66px 1fr}
   .collapsed aside{padding:22px 10px}
-  .collapsed .brand{justify-content:center;margin-bottom:14px}
-  .collapsed .brand .mark,.collapsed aside h1,.collapsed aside .sub,
+  .collapsed .brand{flex-direction:column;justify-content:center;gap:8px;margin-bottom:14px}
+  .collapsed .brand-word,.collapsed .brand .mark,.collapsed aside h1,.collapsed aside .sub,
   .collapsed nav .link .lbl,.collapsed nav .grp{display:none}
+  .collapsed .brand-ic{display:block}
   .collapsed .collapse-btn{margin-inline-start:0}
   .collapsed .collapse-btn svg{transform:rotate(180deg)}
   .collapsed nav .link{justify-content:center;padding:10px 0}

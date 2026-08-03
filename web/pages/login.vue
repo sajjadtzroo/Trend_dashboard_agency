@@ -28,14 +28,8 @@ async function submit() {
   <div class="login-wrap">
     <form class="login-card panel" @submit.prevent="submit">
       <div class="login-brand">
-        <span class="mark">
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
-            stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
-        </span>
-        <div>
-          <h1>Debrief</h1>
-          <p class="muted">Finance Dashboard · IRR</p>
-        </div>
+        <img src="/debrief.svg" alt="Debrief" class="login-logo" />
+        <p class="muted">Finance Dashboard · IRR</p>
       </div>
 
       <label class="fld">Username
@@ -58,17 +52,15 @@ async function submit() {
 .login-wrap{min-height:100vh;display:grid;place-items:center;padding:24px;
   background:radial-gradient(70% 50% at 50% 0%, var(--wash) 0%, rgba(250,250,250,0) 60%), var(--bg)}
 .login-card{width:100%;max-width:380px;display:flex;flex-direction:column;gap:16px;margin:0}
-.login-brand{display:flex;align-items:center;gap:12px;margin-bottom:4px}
-.login-brand .mark{width:38px;height:38px;border-radius:11px;background:var(--ink);
-  display:grid;place-items:center;color:#fff;flex:0 0 auto}
-.login-brand h1{font-size:18px;margin:0;color:var(--ink)}
-.login-brand p{margin:2px 0 0;font-size:12px}
+.login-brand{display:flex;flex-direction:column;align-items:flex-start;gap:6px;margin-bottom:8px}
+.login-logo{height:34px;width:auto}
+.login-brand p{margin:0;font-size:12px}
 .fld{display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--muted)}
-.fld input{padding:10px 12px;border:1px solid var(--border);border-radius:12px;background:#fff;
+.fld input{padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);background:#fff;
   color:var(--text);font-size:14px}
 .fld input:focus-visible{outline:2px solid var(--primary);outline-offset:1px}
 .login-error{margin:0;color:var(--danger);font-size:13px}
-.login-btn{padding:11px 16px;border:none;border-radius:999px;background:var(--primary);color:#fff;
+.login-btn{padding:11px 16px;border:none;border-radius:var(--radius-sm);background:var(--primary);color:#fff;
   font-weight:600;font-size:14px;cursor:pointer;transition:opacity .15s ease}
 .login-btn:disabled{opacity:.55;cursor:not-allowed}
 </style>
