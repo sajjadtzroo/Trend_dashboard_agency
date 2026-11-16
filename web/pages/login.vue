@@ -15,9 +15,10 @@ async function submit() {
     await auth.login(username.value, password.value);
     await navigateTo((route.query.redirect as string) || "/");
   } catch (e: any) {
-    error.value = e?.response?.status === 429
-      ? "Too many attempts. Please wait a few minutes."
-      : "Invalid username or password.";
+    const s = e?.response?.status;
+    error.value = s === 429 ? "Too many attempts. Please wait a few minutes."
+      : s === 401 ? "Invalid username or password."
+      : `Server unavailable (${s ?? "network error"}). Try again shortly.`;
   } finally {
     busy.value = false;
   }

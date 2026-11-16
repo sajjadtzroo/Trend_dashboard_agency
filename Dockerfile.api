@@ -7,7 +7,8 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY app ./app
-COPY ["schema.sql", "Creative Lab Sales Funnel - 1405 Sales Funnel.csv", "./"]
+# ponytail: seed CSV is gitignored and optional (main.py skips if absent; prod SEED_ON_START=0)
+COPY schema.sql ./
 
 EXPOSE 8000
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
