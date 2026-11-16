@@ -60,6 +60,11 @@ def get_filters(
 # The funnel endpoint is the sole exception — it shows every stage by definition.
 INVOICED = "f.order_status_key = (SELECT order_status_key FROM dim_order_status WHERE label='Invoice')"
 
+# One sheet order can be several SALE facts (one per channel, source_row 'Sales!R12#VOD').
+# Count orders, not fact rows.
+ORDER_ID = "COALESCE(split_part(f.source_row, '#', 1), f.transaction_id::text)"
+ORDERS = f"COUNT(DISTINCT {ORDER_ID})"
+
 
 # Standard joins every aggregate query builds on.
 JOINS = """

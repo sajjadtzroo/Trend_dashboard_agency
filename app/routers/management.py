@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from ..db import get_db
 from ..cache import invalidate_aggregates, cached
 from ..queries import rows
-from ..filters import INVOICED, JOINS, Filters, get_filters
+from ..filters import INVOICED, JOINS, ORDERS, Filters, get_filters
 
 router = APIRouter(prefix="/manage", tags=["management"])
 
@@ -24,7 +24,7 @@ RES = {
 LIST_SQL = {
     "campaigns": """
         SELECT cm.campaign_key AS id, cm.order_name AS name, MAX(pr.project_code) AS project,
-               MAX(c.company_name) AS client, COUNT(f.transaction_id) AS rows,
+               MAX(c.company_name) AS client, {ORDERS} AS rows,
                COALESCE(SUM(f.revenue),0) AS revenue, COALESCE(SUM(f.cost),0) AS cost,
                COALESCE(SUM(f.operational_profit),0) AS profit,
                CASE WHEN SUM(f.revenue)>0 THEN ROUND(SUM(f.operational_profit)/SUM(f.revenue)*100,1) END AS margin
@@ -35,7 +35,7 @@ LIST_SQL = {
         GROUP BY cm.campaign_key, cm.order_name ORDER BY revenue DESC""",
     "projects": """
         SELECT pr.project_key AS id, pr.project_code AS name, MAX(pr.project_name) AS title,
-               MAX(c.company_name) AS client, COUNT(f.transaction_id) AS rows,
+               MAX(c.company_name) AS client, {ORDERS} AS rows,
                COALESCE(SUM(f.revenue),0) AS revenue, COALESCE(SUM(f.cost),0) AS cost,
                COALESCE(SUM(f.operational_profit),0) AS profit,
                (SELECT COUNT(*) FROM dim_campaign cm WHERE cm.project_key = pr.project_key) AS campaigns
@@ -45,7 +45,7 @@ LIST_SQL = {
         GROUP BY pr.project_key, pr.project_code ORDER BY revenue DESC""",
     "users": """
         SELECT u.user_key AS id, u.account AS name, MAX(u.role) AS role,
-               COUNT(f.transaction_id) AS rows, COALESCE(SUM(f.revenue),0) AS revenue,
+               {ORDERS} AS rows, COALESCE(SUM(f.revenue),0) AS revenue,
                COALESCE(SUM(f.operational_profit),0) AS profit,
                CASE WHEN SUM(f.revenue)>0 THEN ROUND(SUM(f.operational_profit)/SUM(f.revenue)*100,1) END AS margin
         {JOINS}
@@ -53,7 +53,7 @@ LIST_SQL = {
         GROUP BY u.user_key, u.account ORDER BY revenue DESC""",
     "media": """
         SELECT m.media_key AS id, m.media_name AS name,
-               COUNT(f.transaction_id) AS rows, COALESCE(SUM(f.revenue),0) AS revenue,
+               {ORDERS} AS rows, COALESCE(SUM(f.revenue),0) AS revenue,
                COALESCE(SUM(f.cost),0) AS cost, COALESCE(SUM(f.operational_profit),0) AS profit
         {JOINS} LEFT JOIN dim_media m ON m.media_key = f.media_key
         {where} AND {INVOICED} AND m.is_active
@@ -72,7 +72,7 @@ def list_resource(resource: str, db: Session = Depends(get_db), f: Filters = Dep
     _res(resource)
     def q():
         where, p = f.where(type_default="SALE")
-        sql = LIST_SQL[resource].format(JOINS=JOINS, where=where, INVOICED=INVOICED)
+        sql = LIST_SQL[resource].format(JOINS=JOINS, where=where, INVOICED=INVOICED, ORDERS=ORDERS)
         return rows(db, sql, p)
     return cached(f"manage-{resource}", f.as_params(), q)
 

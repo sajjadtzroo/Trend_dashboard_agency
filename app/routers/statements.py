@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from ..db import get_db
 from ..cache import cached
-from ..filters import Filters, get_filters, JOINS, INVOICED
+from ..filters import Filters, get_filters, JOINS, INVOICED, ORDERS
 from ..queries import rows
 
 router = APIRouter(prefix="/statements", tags=["statements"])
@@ -148,7 +148,7 @@ def segments(by: str = "campaign", db: Session = Depends(get_db), f: Filters = D
                    COALESCE(SUM(f.revenue),0) AS revenue, COALESCE(SUM(f.cost),0) AS cost,
                    COALESCE(SUM(f.revenue)-SUM(f.cost),0) AS gross_profit,
                    COALESCE(SUM(f.operational_profit),0) AS operating_profit,
-                   COUNT(f.transaction_id) AS orders,
+                   {ORDERS} AS orders,
                    CASE WHEN SUM(f.revenue)>0
                         THEN ROUND(SUM(f.operational_profit)/SUM(f.revenue)*100,1) END AS margin
             {JOINS}{join}{where} AND {INVOICED}

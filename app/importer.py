@@ -18,12 +18,36 @@ from .jalali import upsert_date
 
 DATA_SHEETS = ("Sales", "Invoices", "Suppliers")
 
+# Sales Funnel channels: each has `<ch> Revenue IRR` + cost column(s). VOD splits cost
+# into Invested (media buy) + External; every other channel has a single `<ch> Cost IRR`.
+CHANNELS = ("Digital", "Social", "VOD", "BTL", "ATL", "Studio")
+
+
+def channel_split(r):
+    """One sheet row -> [(channel, revenue, cost, invested_cost)] for channels with money.
+
+    Returns [] unless the parts reconcile with the row's `Total …` columns (older sheet
+    layouts left the channel columns blank) — the caller then books one row from the totals.
+    """
+    n = lambda k: clean_number(r.get(k)) or 0
+    parts = []
+    for ch in CHANNELS:
+        invested = n(f"{ch} Invested Cost IRR")
+        cost = n(f"{ch} Cost IRR") + invested + n(f"{ch} External Cost IRR")
+        rev = n(f"{ch} Revenue IRR")
+        if rev or cost:
+            parts.append((ch, rev, cost, invested))
+    ok = (parts and abs(sum(p[1] for p in parts) - n("Total Revenue IRR")) < 1
+          and abs(sum(p[2] for p in parts) - n("Total Cost IRR")) < 1)
+    return parts if ok else []
+
 
 class Importer:
     def __init__(self, db):
         self.db = db
         self.cache: dict = {}
         self.summary = {"SALE": 0, "RECEIVABLE": 0, "PAYABLE": 0}
+        self.orders = 0                 # sheet orders read (an order can be several SALE facts)
         self.skipped_blank = 0          # blank/spacer rows dropped (no key field)
         self.missing_day = 0            # rows with year+month but no day (defaulted to 1)
         self.notes: list[str] = []
@@ -156,9 +180,8 @@ class Importer:
                 fulfillment_pct=clean_percent(r.get("Fulfillment %")))
 
     def import_sales_csv(self, path):
-        """Sales Funnel CSV -> SALE facts. Revenue/cost/op-profit come from the `Total …`
-        columns (per-channel columns are blank on almost every row). Blank/spacer rows with
-        no company are skipped."""
+        """Sales Funnel CSV -> SALE facts, one per channel carrying money (see channel_split).
+        Blank/spacer rows with no company are skipped."""
         for i, r in enumerate(self._read_csv(path), start=3):   # data starts at file row 3
             company = canon_company(r.get("Company Name"))
             if not company:
@@ -167,23 +190,29 @@ class Importer:
             sr = f"Sales!R{i}"
             ck = self.client(company, clean_text(r.get("National Code")), clean_text(r.get("Category")))
             pk = self.project(clean_text(r.get("Project ID No.")), None, ck)
-            rev = clean_number(r.get("Total Revenue IRR")) or 0
-            cost = clean_number(r.get("Total Cost IRR")) or 0
-            op = clean_number(r.get("Total Op. Proftit IRR"))    # sheet's own header typo
-            if op is None:
-                op = rev - cost
-            service = clean_text(r.get("Main Service"))
-            self._fact("SALE", sr,
+            parts = channel_split(r)
+            if parts:
+                lines = [(f"{sr}#{ch}", ch, rev, cost, inv) for ch, rev, cost, inv in parts]
+            else:   # no (reconciling) channel columns: one line from the totals, as before
+                lines = [(sr, clean_text(r.get("Main Service")),
+                          clean_number(r.get("Total Revenue IRR")) or 0,
+                          clean_number(r.get("Total Cost IRR")) or 0,
+                          clean_number(r.get("Total Invested Cost IRR")))]
+            shared = dict(
                 date_key=self._date_csv(r), user_key=self.user(clean_text(r.get("Account"))),
                 client_key=ck, brand_key=self.brand(canon_brand(r.get("Brand")), ck),
                 project_key=pk, campaign_key=self.campaign(clean_text(r.get("Order Name")), pk),
-                service_key=self.lookup("service", "dim_service", "service_key", "service_name", service),
-                media_key=self.lookup("media", "dim_media", "media_key", "media_name", service),
                 order_status_key=self.lookup("order_status", "dim_order_status", "order_status_key", "label",
                                              clean_text(r.get("Order Status"))),
-                revenue=rev, cost=cost, operational_profit=op,
-                profit_margin=round(op / rev, 4) if rev else None,
                 fulfillment_pct=clean_percent(r.get("Order Fulfillment")))
+            for line_sr, service, rev, cost, invested in lines:
+                op = rev - cost
+                self._fact("SALE", line_sr, **shared,
+                    service_key=self.lookup("service", "dim_service", "service_key", "service_name", service),
+                    media_key=self.lookup("media", "dim_media", "media_key", "media_name", service),
+                    revenue=rev, cost=cost, invested_cost=invested or None, operational_profit=op,
+                    profit_margin=round(op / rev, 4) if rev else None)
+            self.orders += 1
 
     def import_invoices(self, path):
         for i, r in enumerate(self._read(path, "Invoices"), start=2):
@@ -263,5 +292,5 @@ class Importer:
         """Seed path: Sales Funnel CSV only (SALE facts)."""
         self.import_sales_csv(path)
         self.db.commit()
-        return {"inserted": self.summary, "skipped_blank": self.skipped_blank,
+        return {"inserted": self.summary, "orders": self.orders, "skipped_blank": self.skipped_blank,
                 "notes": self.notes[:50], "total": sum(self.summary.values())}

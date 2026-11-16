@@ -81,7 +81,7 @@ CREATE TABLE IF NOT EXISTS dim_campaign (
 
 CREATE TABLE IF NOT EXISTS dim_service (
     service_key  SERIAL PRIMARY KEY,
-    service_name TEXT NOT NULL UNIQUE                       -- VOD, BTL, Studio, Digital
+    service_name TEXT NOT NULL UNIQUE                       -- VOD, BTL, Studio, Digital, Social, ATL
 );
 
 CREATE TABLE IF NOT EXISTS dim_supplier (
@@ -154,7 +154,8 @@ CREATE TABLE IF NOT EXISTS fact_transaction (
     amount_paid         NUMERIC(20,2),
     balance             NUMERIC(20,2),
     revenue             NUMERIC(20,2),   -- SALE
-    cost                NUMERIC(20,2),   -- SALE
+    cost                NUMERIC(20,2),   -- SALE (total: invested + external)
+    invested_cost       NUMERIC(20,2),   -- SALE: the invested part of cost (VOD media buy)
     operational_profit  NUMERIC(20,2),   -- SALE
     profit_margin       NUMERIC(7,4),    -- SALE (null when source was #DIV/0!)
     fulfillment_pct     NUMERIC(5,2),    -- SALE (0..100)
@@ -162,6 +163,10 @@ CREATE TABLE IF NOT EXISTS fact_transaction (
     source_row          TEXT,            -- optional provenance: 'Sales!R12'
     created_at          TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- Sales Funnel sheet now carries per-channel columns: one SALE fact per channel
+-- (source_row 'Sales!R12#VOD'), so an order spanning channels is several rows.
+ALTER TABLE fact_transaction ADD COLUMN IF NOT EXISTS invested_cost NUMERIC(20,2);
 
 -- =====================================================================
 -- INDEXES
@@ -213,10 +218,10 @@ ALTER TABLE dim_user     ADD COLUMN IF NOT EXISTS role TEXT;
 -- =====================================================================
 -- SEED LOOKUPS
 -- =====================================================================
-INSERT INTO dim_service (service_name) VALUES ('VOD'),('BTL'),('Studio'),('Digital')
+INSERT INTO dim_service (service_name) VALUES ('VOD'),('BTL'),('Studio'),('Digital'),('Social'),('ATL')
     ON CONFLICT (service_name) DO NOTHING;
 
-INSERT INTO dim_media (media_name) VALUES ('VOD'),('BTL'),('Studio'),('Digital'),('OOH'),('Social')
+INSERT INTO dim_media (media_name) VALUES ('VOD'),('BTL'),('Studio'),('Digital'),('OOH'),('Social'),('ATL')
     ON CONFLICT (media_name) DO NOTHING;
 
 INSERT INTO dim_payment_status (payment_status_key, label)
@@ -297,6 +302,10 @@ CREATE TABLE IF NOT EXISTS chunk (
     embedding       halfvec(1024),
     UNIQUE (document_id, ord, embedding_model)
 );
+-- ponytail: prod had a pre-existing `chunk` without these columns; CREATE IF NOT EXISTS
+-- skipped it and the hnsw index below crashed boot. Backfill columns idempotently.
+ALTER TABLE chunk ADD COLUMN IF NOT EXISTS embedding_model TEXT;
+ALTER TABLE chunk ADD COLUMN IF NOT EXISTS embedding halfvec(1024);
 
 CREATE INDEX IF NOT EXISTS ix_chunk_embedding
     ON chunk USING hnsw (embedding halfvec_cosine_ops) WITH (m = 16, ef_construction = 64);

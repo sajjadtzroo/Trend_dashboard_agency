@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from ..db import get_db
 from ..cache import cached
-from ..filters import Filters, get_filters, JOINS
+from ..filters import Filters, get_filters, JOINS, ORDERS, ORDER_ID
 from ..queries import rows
 
 router = APIRouter(tags=["dashboard"])
@@ -78,7 +78,7 @@ def funnel(db: Session = Depends(get_db), f: Filters = Depends(get_filters)):
         where, p = f.where(type_default="SALE")
         sql = f"""
         SELECT os.label AS order_status, os.funnel_rank,
-               COUNT(*) AS count, COALESCE(SUM(f.revenue),0) AS revenue
+               {ORDERS} AS count, COALESCE(SUM(f.revenue),0) AS revenue
         {JOINS} LEFT JOIN dim_order_status os ON os.order_status_key = f.order_status_key
         {where} GROUP BY os.label, os.funnel_rank ORDER BY os.funnel_rank"""
         return rows(db, sql, p)
@@ -96,7 +96,7 @@ def funnel_breakdown(by: str = "account", db: Session = Depends(get_db), f: Filt
         where, p = f.where(type_default="SALE")
         sql = f"""
         SELECT os.label AS order_status, os.funnel_rank, {grp} AS dim,
-               COUNT(*) AS count, COALESCE(SUM(f.revenue),0) AS revenue
+               {ORDERS} AS count, COALESCE(SUM(f.revenue),0) AS revenue
         {JOINS} LEFT JOIN dim_order_status os ON os.order_status_key = f.order_status_key
         {where} AND {grp} IS NOT NULL
         GROUP BY os.label, os.funnel_rank, {grp}
@@ -173,7 +173,7 @@ def brands(db: Session = Depends(get_db), f: Filters = Depends(get_filters)):
         SELECT b.brand_name AS brand, MAX(c.company_name) AS client,
                COALESCE(SUM(f.revenue),0) AS revenue, COALESCE(SUM(f.cost),0) AS cost,
                COALESCE(SUM(f.operational_profit),0) AS profit,
-               COUNT(f.transaction_id) AS orders,
+               {ORDERS} AS orders,
                CASE WHEN SUM(f.revenue)>0 THEN ROUND(SUM(f.operational_profit)/SUM(f.revenue)*100,1) END AS margin
         {JOINS} {where} AND f.order_status_key = {_INVOICE} AND b.brand_name IS NOT NULL
         GROUP BY b.brand_name ORDER BY revenue DESC"""
@@ -250,10 +250,12 @@ def fulfillment_trend(db: Session = Depends(get_db), f: Filters = Depends(get_fi
     def q():
         where, p = f.where(type_default="SALE")
         sql = f"""
-        SELECT d.jalali_year, d.jalali_month, d.jalali_month_name_fa,
-               ROUND(AVG(f.fulfillment_pct), 1) AS fulfillment
-        {JOINS} {where} AND f.fulfillment_pct IS NOT NULL
-        GROUP BY d.jalali_year, d.jalali_month, d.jalali_month_name_fa
-        ORDER BY d.jalali_year, d.jalali_month"""
+        SELECT jalali_year, jalali_month, jalali_month_name_fa,
+               ROUND(AVG(pct), 1) AS fulfillment
+        FROM (SELECT DISTINCT d.jalali_year, d.jalali_month, d.jalali_month_name_fa,
+                     {ORDER_ID} AS order_id, f.fulfillment_pct AS pct   -- once per order, not per channel
+              {JOINS} {where} AND f.fulfillment_pct IS NOT NULL) t
+        GROUP BY jalali_year, jalali_month, jalali_month_name_fa
+        ORDER BY jalali_year, jalali_month"""
         return rows(db, sql, p)
     return cached("fulfillment-trend", f.as_params(), q)
